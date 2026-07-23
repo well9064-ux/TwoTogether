@@ -142,6 +142,14 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /받은 좋아요 \$\{receivedLikes\}개/);
   assert.match(page, /웃어요.*슬퍼요.*화났어요.*지루해요/s);
   assert.match(page, /대기실에서는 채팅 없이 간단한 이모티콘만 보낼 수 있어요/);
+  assert.match(page, /const waitingReactions =/);
+  assert.match(page, /profileReactionBubble/);
+  assert.match(page, /내 조건에 맞는 방 찾기/);
+  assert.match(page, /filteredLobbyRooms\.slice/);
+  assert.match(page, /aria-label="게임방 목록 페이지"/);
+  assert.match(page, /profileReadyState/);
+  assert.match(page, /강퇴 투표/);
+  assert.match(page, /kickVoteThreshold/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /forced-colors:\s*active/);

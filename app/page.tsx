@@ -149,6 +149,24 @@ const defaultRooms: RoomConfig[] = [
   { id: "room-01", title: "퇴근 후 설레는 한 판", people: 4, capacity: 6, tag: "초보 환영", time: "약 25분", minAge: 25, maxAge: 35, region: "모든 지역" },
   { id: "room-02", title: "취향부터 천천히", people: 2, capacity: 6, tag: "대화 중심", time: "약 30분", minAge: 27, maxAge: 39, region: "서울" },
   { id: "room-03", title: "주말의 인연", people: 3, capacity: 4, tag: "곧 시작", time: "약 20분", minAge: 24, maxAge: 32, region: "경기" },
+  { id: "room-04", title: "부산 바다처럼 편하게", people: 4, capacity: 6, tag: "부산 모임", time: "약 25분", minAge: 20, maxAge: 29, region: "부산" },
+  { id: "room-05", title: "서른의 진솔한 대화", people: 2, capacity: 4, tag: "30대", time: "약 20분", minAge: 30, maxAge: 39, region: "서울" },
+  { id: "room-06", title: "대구 맛집 친구부터", people: 3, capacity: 6, tag: "맛집 취향", time: "약 30분", minAge: 23, maxAge: 33, region: "대구" },
+  { id: "room-07", title: "인천 야경 산책", people: 2, capacity: 4, tag: "산책 좋아요", time: "약 20분", minAge: 25, maxAge: 34, region: "인천" },
+  { id: "room-08", title: "광주 문화생활 메이트", people: 4, capacity: 6, tag: "전시·공연", time: "약 25분", minAge: 21, maxAge: 31, region: "광주" },
+  { id: "room-09", title: "대전 카페 탐방", people: 2, capacity: 6, tag: "카페 취향", time: "약 30분", minAge: 20, maxAge: 30, region: "대전" },
+  { id: "room-10", title: "제주에서 천천히", people: 3, capacity: 4, tag: "여행 이야기", time: "약 20분", minAge: 28, maxAge: 40, region: "제주" },
+  { id: "room-11", title: "경기 퇴근길 토크", people: 4, capacity: 6, tag: "직장인", time: "약 25분", minAge: 26, maxAge: 36, region: "경기" },
+  { id: "room-12", title: "울산 취미 공유회", people: 2, capacity: 4, tag: "취미 발견", time: "약 20분", minAge: 22, maxAge: 32, region: "울산" },
+];
+
+const waitingReactions = [
+  { emoji: "😊", label: "웃어요" }, { emoji: "😢", label: "슬퍼요" },
+  { emoji: "😠", label: "화났어요" }, { emoji: "🥱", label: "지루해요" },
+  { emoji: "👋", label: "반가워요" }, { emoji: "😍", label: "설레요" },
+  { emoji: "😳", label: "부끄러워요" }, { emoji: "🤔", label: "궁금해요" },
+  { emoji: "😮", label: "놀랐어요" }, { emoji: "👏", label: "응원해요" },
+  { emoji: "👍", label: "좋아요" }, { emoji: "🙏", label: "고마워요" },
 ];
 
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "버거 팀워크", "최종 선택"];
@@ -252,6 +270,13 @@ export default function Home() {
   const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
   const [receivedLikes] = useState(2);
   const [lastReaction, setLastReaction] = useState<{ emoji: string; label: string } | null>(null);
+  const [lobbySearchMinAge, setLobbySearchMinAge] = useState("");
+  const [lobbySearchMaxAge, setLobbySearchMaxAge] = useState("");
+  const [lobbySearchRegion, setLobbySearchRegion] = useState("모든 지역");
+  const [lobbyPage, setLobbyPage] = useState(1);
+  const [kickCandidateId, setKickCandidateId] = useState<string | null>(null);
+  const [kickVoteCount, setKickVoteCount] = useState(0);
+  const [kickedProfileIds, setKickedProfileIds] = useState<string[]>([]);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -355,13 +380,47 @@ export default function Home() {
   }));
   const maleSeatCount = Math.ceil(activeRoom.people / 2);
   const femaleSeatCount = Math.floor(activeRoom.people / 2);
-  const waitingMen = [myWaitingProfile, ...demoWaitingProfiles].filter((person) => person.gender === "남성").slice(0, maleSeatCount);
-  const waitingWomen = [myWaitingProfile, ...demoWaitingProfiles].filter((person) => person.gender === "여성").slice(0, femaleSeatCount);
+  const visibleWaitingProfiles = [myWaitingProfile, ...demoWaitingProfiles].filter((person) => !kickedProfileIds.includes(person.id));
+  const waitingMen = visibleWaitingProfiles.filter((person) => person.gender === "남성").slice(0, maleSeatCount);
+  const waitingWomen = visibleWaitingProfiles.filter((person) => person.gender === "여성").slice(0, femaleSeatCount);
+  const lobbyRooms = [...(createdRoom ? [createdRoom] : []), ...defaultRooms];
+  const filteredLobbyRooms = lobbyRooms.filter((room) => {
+    const matchesMinAge = !lobbySearchMinAge || room.minAge >= Number(lobbySearchMinAge);
+    const matchesMaxAge = !lobbySearchMaxAge || room.maxAge <= Number(lobbySearchMaxAge);
+    const matchesRegion = lobbySearchRegion === "모든 지역" || room.region === lobbySearchRegion;
+    return matchesMinAge && matchesMaxAge && matchesRegion;
+  });
+  const lobbyPageCount = Math.max(1, Math.ceil(filteredLobbyRooms.length / 9));
+  const visibleLobbyRooms = filteredLobbyRooms.slice((lobbyPage - 1) * 9, lobbyPage * 9);
+  const kickCandidate = demoWaitingProfiles.find((person) => person.id === kickCandidateId);
+  const kickVoteThreshold = Math.floor(activeRoom.people / 2) + 1;
 
   const toggleProfileLike = (profileId: string) => {
     setLikedProfiles((previous) => previous.includes(profileId)
       ? previous.filter((id) => id !== profileId)
       : [...previous, profileId]);
+  };
+
+  const resetLobbySearch = () => {
+    setLobbySearchMinAge("");
+    setLobbySearchMaxAge("");
+    setLobbySearchRegion("모든 지역");
+    setLobbyPage(1);
+  };
+
+  const startKickVote = (profileId: string) => {
+    setKickCandidateId(profileId);
+    setKickVoteCount(2);
+  };
+
+  const addDemoKickVote = () => {
+    const nextVotes = kickVoteCount + 1;
+    setKickVoteCount(nextVotes);
+    if (kickCandidateId && nextVotes >= kickVoteThreshold) {
+      setKickedProfileIds((previous) => [...previous, kickCandidateId]);
+      setKickCandidateId(null);
+      setKickVoteCount(0);
+    }
   };
 
   const enterLobby = (verified = isVerified) => {
@@ -1046,10 +1105,30 @@ export default function Home() {
             <div><p className="eyebrow">LIVE ROOMS</p><h2>참가 가능한 게임방</h2></div>
             <button className="secondaryButton" type="button" onClick={() => transitionTo("create-room")}>＋ 새 방 만들기</button>
           </div>
+          <form className="roomSearchPanel" onSubmit={(event) => event.preventDefault()} aria-label="맞춤 방 검색">
+            <div className="roomSearchHeading"><div><b>내 조건에 맞는 방 찾기</b><p>원하는 나이대와 지역을 선택해 보세요.</p></div><span>{filteredLobbyRooms.length}개 방</span></div>
+            <div className="roomSearchFields">
+              <label htmlFor="search-min-age">최소 나이
+                <input id="search-min-age" type="number" min={19} max={60} inputMode="numeric" placeholder="예: 20"
+                  value={lobbySearchMinAge} onChange={(event) => { setLobbySearchMinAge(event.target.value.replace(/^0+(?=\d)/, "")); setLobbyPage(1); }} />
+              </label>
+              <span aria-hidden="true">~</span>
+              <label htmlFor="search-max-age">최대 나이
+                <input id="search-max-age" type="number" min={19} max={60} inputMode="numeric" placeholder="예: 30"
+                  value={lobbySearchMaxAge} onChange={(event) => { setLobbySearchMaxAge(event.target.value.replace(/^0+(?=\d)/, "")); setLobbyPage(1); }} />
+              </label>
+              <label htmlFor="search-region">지역
+                <select id="search-region" value={lobbySearchRegion} onChange={(event) => { setLobbySearchRegion(event.target.value); setLobbyPage(1); }}>
+                  {["모든 지역", "서울", "경기", "인천", "부산", "대구", "광주", "대전", "울산", "제주"].map((region) => <option key={region}>{region}</option>)}
+                </select>
+              </label>
+              <button className="textButton" type="button" onClick={resetLobbySearch}>조건 초기화</button>
+            </div>
+          </form>
           <div className="roomGrid">
-            {[...(createdRoom ? [createdRoom] : []), ...defaultRooms].map((room, index) => (
+            {visibleLobbyRooms.map((room, index) => (
               <article className="roomCard" key={room.title}>
-                <div className="roomTop"><span>ROOM 0{index + 1}</span><i>{room.tag}</i></div>
+                <div className="roomTop"><span>ROOM {String((lobbyPage - 1) * 9 + index + 1).padStart(2, "0")}</span><i>{room.tag}</i></div>
                 <h3>{room.title}</h3>
                 <p>{room.minAge}–{room.maxAge}세 · {room.region} · 남녀 {room.capacity / 2}:{room.capacity / 2}</p>
                 <div className="seatRow" aria-label={`${room.capacity}명 중 ${room.people}명 참가`}>
@@ -1062,6 +1141,16 @@ export default function Home() {
               </article>
             ))}
           </div>
+          {!visibleLobbyRooms.length && <div className="emptyRoomSearch" role="status"><span>🔎</span><b>조건에 맞는 방이 아직 없어요.</b><p>검색 조건을 조금 넓혀보세요.</p><button className="textButton" type="button" onClick={resetLobbySearch}>전체 방 보기</button></div>}
+          {lobbyPageCount > 1 && (
+            <nav className="roomPagination" aria-label="게임방 목록 페이지">
+              <button type="button" disabled={lobbyPage === 1} onClick={() => setLobbyPage((page) => page - 1)}>이전</button>
+              {Array.from({ length: lobbyPageCount }, (_, index) => index + 1).map((page) => (
+                <button type="button" key={page} className={lobbyPage === page ? "active" : ""} aria-current={lobbyPage === page ? "page" : undefined} onClick={() => setLobbyPage(page)}>{page}</button>
+              ))}
+              <button type="button" disabled={lobbyPage === lobbyPageCount} onClick={() => setLobbyPage((page) => page + 1)}>다음</button>
+            </nav>
+          )}
           <aside className="lobbySafety">
             <span aria-hidden="true">🛡</span>
             <div><b>모두가 편안한 Heart Round</b><p>불쾌한 언행은 신고·차단할 수 있고, 연락처 공개는 요구하지 않습니다.</p></div>
@@ -1139,13 +1228,14 @@ export default function Home() {
                 <div className="genderRowTitle"><span>{group.mark}</span><div><h2 id={`${group.key}-title`}>{group.title}</h2><p>{group.people.length} / {group.seats}명 입장</p></div></div>
                 <div className="waitingProfileGrid">
                   {group.people.map((person) => (
-                    <article className={`waitingProfileCard ${person.isMe ? "mine" : ""}`} key={person.id}>
+                    <article className={`waitingProfileCard ${person.isMe ? "mine" : ""} ${person.isMe && isReady ? "isReady" : ""}`} key={person.id}>
                       <div className="waitingPortrait" style={{ background: `linear-gradient(145deg, ${person.color}, #211b2c)` }}>
                         {person.isMe && profilePhoto ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={profilePhoto} alt={`${person.name} 프로필`} />
                         ) : <span>{person.avatar}</span>}
                         <i>{person.isMe ? "나" : group.mark}</i>
+                        {person.isMe && lastReaction && <span className="profileReactionBubble" role="status" aria-label={`내 감정: ${lastReaction.label}`}>{lastReaction.emoji}</span>}
                       </div>
                       <div className="waitingProfileBody">
                         <div className="profileIdentity"><h2>{person.name}</h2><b>{person.age}세</b></div>
@@ -1160,6 +1250,10 @@ export default function Home() {
                               </button>}
                           <em className="verifyBadge">인증 ✓</em>
                         </div>
+                        <div className={`profileReadyState ${person.isMe && isReady ? "ready" : ""}`}>
+                          {person.isMe ? (isReady ? "✓ 준비 완료" : "준비 전") : person.id === "a1" || person.id === "b1" ? "✓ 준비 완료" : "준비 전"}
+                        </div>
+                        {!person.isMe && <button className="kickVoteButton" type="button" onClick={() => startKickVote(person.id)}>강퇴 투표</button>}
                       </div>
                     </article>
                   ))}
@@ -1175,13 +1269,25 @@ export default function Home() {
           <section className="reactionPanel" aria-labelledby="reaction-title">
             <div><b id="reaction-title">표정으로 인사하기</b><p>대기실에서는 채팅 없이 간단한 이모티콘만 보낼 수 있어요.</p></div>
             <div className="reactionButtons">
-              {[{ emoji: "😊", label: "웃어요" }, { emoji: "😢", label: "슬퍼요" }, { emoji: "😠", label: "화났어요" }, { emoji: "🥱", label: "지루해요" }].map((reaction) => (
+              {waitingReactions.map((reaction) => (
                 <button type="button" key={reaction.label} aria-label={`${reaction.label} 이모티콘 보내기`}
+                  className={lastReaction?.label === reaction.label ? "selected" : ""}
+                  aria-pressed={lastReaction?.label === reaction.label}
                   onClick={() => setLastReaction(reaction)}><span>{reaction.emoji}</span>{reaction.label}</button>
               ))}
             </div>
             {lastReaction && <p className="reactionNotice" role="status"><span>{lastReaction.emoji}</span> {profileName}님이 ‘{lastReaction.label}’ 표정을 보냈어요.</p>}
           </section>
+          {kickCandidate && (
+            <section className="kickVotePanel" aria-labelledby="kick-vote-title">
+              <div><span aria-hidden="true">🗳️</span><div><b id="kick-vote-title">{kickCandidate.name}님 강퇴 투표</b><p>과반수 찬성 시 대기방에서 퇴장합니다. 악의적인 투표는 운영 정책에 따라 제한될 수 있어요.</p></div></div>
+              <div className="kickVoteProgress" role="progressbar" aria-label="강퇴 찬성표" aria-valuemin={0} aria-valuemax={kickVoteThreshold} aria-valuenow={Math.min(kickVoteCount, kickVoteThreshold)}>
+                <span style={{ width: `${Math.min(100, (kickVoteCount / kickVoteThreshold) * 100)}%` }} />
+              </div>
+              <p><b>{kickVoteCount}</b> / {kickVoteThreshold}표 · 과반수까지 {Math.max(0, kickVoteThreshold - kickVoteCount)}표 남음</p>
+              <div><button className="secondaryButton" type="button" onClick={() => { setKickCandidateId(null); setKickVoteCount(0); }}>투표 취소</button><button className="primaryButton" type="button" onClick={addDemoKickVote}>데모 찬성표 받기</button></div>
+            </section>
+          )}
           <div className="waitingFooter">
             <div><b>게임 구성</b><p>사랑의 작대기 + 랜덤 미니게임 3개 + 최종 선택 · 약 25분</p></div>
             <button className={`primaryButton readyButton ${isReady ? "ready" : ""}`} type="button" aria-pressed={isReady} onClick={() => setIsReady((ready) => !ready)}>
