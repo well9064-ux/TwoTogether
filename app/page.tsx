@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 type Player = {
   id: string;
@@ -14,6 +14,8 @@ type Player = {
   team: "A" | "B";
 };
 
+type Screen = "landing" | "signal" | "match-result" | "quiz-intro" | "draw" | "guess" | "quiz-result";
+
 const players: Player[] = [
   { id: "a1", name: "민준", age: 29, job: "서비스 기획자", intro: "좋은 카페와 느긋한 산책을 좋아해요.", interests: ["커피", "여행"], avatar: "민", color: "#7456f1", team: "A" },
   { id: "a2", name: "도윤", age: 31, job: "건축 디자이너", intro: "주말엔 요리하고 사진을 찍습니다.", interests: ["요리", "사진"], avatar: "도", color: "#3178e0", team: "A" },
@@ -23,6 +25,14 @@ const players: Player[] = [
   { id: "b3", name: "하린", age: 27, job: "연구원", intro: "계획 없는 여행과 보드게임을 즐겨요.", interests: ["여행", "게임"], avatar: "하", color: "#bd57c7", team: "B" },
 ];
 
+const quizQuestions = [
+  { prompt: "내가 가장 좋아하는 음식은?", answer: "떡볶이", options: ["떡볶이", "초밥", "파스타", "삼겹살"] },
+  { prompt: "함께 가고 싶은 여행지는?", answer: "제주도", options: ["제주도", "파리", "뉴욕", "삿포로"] },
+  { prompt: "쉬는 날 가장 하고 싶은 것은?", answer: "늦잠", options: ["늦잠", "등산", "쇼핑", "드라이브"] },
+  { prompt: "내가 좋아하는 계절은?", answer: "가을", options: ["봄", "여름", "가을", "겨울"] },
+  { prompt: "첫 데이트로 가장 좋은 장소는?", answer: "놀이공원", options: ["영화관", "놀이공원", "미술관", "한강"] },
+];
+
 const initialVotes: Record<string, string> = {
   a1: "b2", a2: "b1", a3: "b3", b1: "a2", b2: "a3", b3: "a3",
 };
@@ -30,35 +40,105 @@ const initialVotes: Record<string, string> = {
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "최종 선택"];
 
 export default function Home() {
-  const [screen, setScreen] = useState<"landing" | "game" | "result">("landing");
+  const [screen, setScreen] = useState<Screen>("landing");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [votes, setVotes] = useState<Record<string, string>>(initialVotes);
+  const [quizIndex, setQuizIndex] = useState(0);
+  const [score, setScore] = useState(0);
+  const [answers, setAnswers] = useState<boolean[]>([]);
+  const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const current = players[currentIndex];
   const candidates = players.filter((player) => player.team !== current.team);
   const mutualMatches = useMemo(
-    () =>
-      players
-        .filter((player) => player.team === "A")
-        .flatMap((player) => {
-          const targetId = votes[player.id];
-          const target = players.find((item) => item.id === targetId);
-          return target && votes[target.id] === player.id ? [[player, target] as const] : [];
-        }),
+    () => players
+      .filter((player) => player.team === "A")
+      .flatMap((player) => {
+        const target = players.find((item) => item.id === votes[player.id]);
+        return target && votes[target.id] === player.id ? [[player, target] as const] : [];
+      }),
     [votes],
   );
+  const demoCouple = mutualMatches[0] ?? [players[1], players[3]];
+  const question = quizQuestions[quizIndex];
 
-  const startGame = () => {
+  const resetAll = () => {
     setCurrentIndex(0);
     setVotes(initialVotes);
-    setScreen("game");
+    setQuizIndex(0);
+    setScore(0);
+    setAnswers([]);
+    setSelectedAnswer("");
+    setScreen("signal");
   };
 
   const confirmChoice = () => {
-    if (currentIndex < players.length - 1) {
-      setCurrentIndex((index) => index + 1);
-    } else {
-      setScreen("result");
+    if (currentIndex < players.length - 1) setCurrentIndex((index) => index + 1);
+    else setScreen("match-result");
+  };
+
+  const prepareCanvas = () => {
+    setScreen("draw");
+    requestAnimationFrame(() => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = canvas.clientWidth * 2;
+      canvas.height = canvas.clientHeight * 2;
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.scale(2, 2);
+        context.lineCap = "round";
+        context.lineJoin = "round";
+        context.lineWidth = 5;
+        context.strokeStyle = "#231f2d";
+        context.fillStyle = "#fffdf8";
+        context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+      }
+    });
+  };
+
+  const position = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+  };
+
+  const startLine = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    const context = event.currentTarget.getContext("2d");
+    const point = position(event);
+    context?.beginPath();
+    context?.moveTo(point.x, point.y);
+    setIsDrawing(true);
+  };
+
+  const drawLine = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const context = event.currentTarget.getContext("2d");
+    const point = position(event);
+    context?.lineTo(point.x, point.y);
+    context?.stroke();
+  };
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    context.fillStyle = "#fffdf8";
+    context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  };
+
+  const submitGuess = () => {
+    if (!selectedAnswer) return;
+    const correct = selectedAnswer === question.answer;
+    setAnswers((previous) => [...previous, correct]);
+    if (correct) setScore((previous) => previous + 1);
+    setSelectedAnswer("");
+    if (quizIndex === quizQuestions.length - 1) setScreen("quiz-result");
+    else {
+      setQuizIndex((index) => index + 1);
+      setScreen("quiz-intro");
     }
   };
 
@@ -66,8 +146,7 @@ export default function Home() {
     <main>
       <header className="topbar">
         <button className="brand" onClick={() => setScreen("landing")} aria-label="처음 화면으로">
-          <span className="brandMark">♥</span>
-          <span>HEART ROUND</span>
+          <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
         <span className="prototypeBadge">PRIVATE BETA · 6 PLAYERS</span>
       </header>
@@ -77,39 +156,31 @@ export default function Home() {
           <div className="heroCopy">
             <p className="eyebrow">어색함은 게임에게 맡겨요</p>
             <h1>처음 만난 우리,<br /><em>얼마나 잘 맞을까?</em></h1>
-            <p className="heroDescription">
-              6명이 함께하는 30분간의 소셜 게임. 첫인상부터 취향, 가치관,
-              팀워크까지 자연스럽게 알아가세요.
-            </p>
+            <p className="heroDescription">6명이 함께하는 소셜 게임. 첫인상부터 취향과 가치관까지 자연스럽게 알아가세요.</p>
             <div className="heroActions">
-              <button className="primaryButton" onClick={startGame}>데모 시작하기 <span>→</span></button>
-              <span className="sessionInfo"><b>약 3분</b><small>첫인상 라운드 데모</small></span>
+              <button className="primaryButton" onClick={resetAll}>데모 시작하기 <span>→</span></button>
+              <span className="sessionInfo"><b>2개 라운드</b><small>첫인상 + 취향 퀴즈</small></span>
             </div>
           </div>
-
           <div className="orbit" aria-label="참가자 6명">
             <div className="orbitCore"><span>♥</span><b>6</b><small>PLAYERS</small></div>
             {players.map((player, index) => (
               <div className={`orbitAvatar avatar${index + 1}`} key={player.id} style={{ "--avatar-color": player.color } as React.CSSProperties}>
-                {player.avatar}
-                <span>{player.name}</span>
+                {player.avatar}<span>{player.name}</span>
               </div>
             ))}
           </div>
-
           <div className="stageStrip">
             {stages.map((stage, index) => (
-              <div className="stageItem" key={stage}>
-                <span>0{index + 1}</span>
-                <b>{stage}</b>
-                {index < stages.length - 1 && <i>—</i>}
+              <div className={`stageItem ${index < 2 ? "available" : ""}`} key={stage}>
+                <span>0{index + 1}</span><b>{stage}</b>{index < stages.length - 1 && <i>—</i>}
               </div>
             ))}
           </div>
         </section>
       )}
 
-      {screen === "game" && (
+      {screen === "signal" && (
         <section className="gameScreen">
           <div className="roundHeading">
             <div><p>ROUND 01</p><h2>첫인상 시그널</h2></div>
@@ -120,24 +191,17 @@ export default function Home() {
             <span style={{ background: current.color }}>{current.avatar}</span>
             <p><b>{current.name}</b>님의 선택입니다<small>가장 대화해 보고 싶은 한 사람을 골라주세요</small></p>
           </div>
-
           <div className="profileGrid">
             {candidates.map((candidate) => {
               const selected = votes[current.id] === candidate.id;
               return (
-                <button
-                  key={candidate.id}
-                  className={`profileCard ${selected ? "selected" : ""}`}
-                  onClick={() => setVotes((prev) => ({ ...prev, [current.id]: candidate.id }))}
-                  aria-pressed={selected}
-                >
+                <button key={candidate.id} className={`profileCard ${selected ? "selected" : ""}`}
+                  onClick={() => setVotes((previous) => ({ ...previous, [current.id]: candidate.id }))} aria-pressed={selected}>
                   <div className="portrait" style={{ background: `linear-gradient(145deg, ${candidate.color}, #181526)` }}>
-                    <span>{candidate.avatar}</span>
-                    {selected && <i>♥ MY SIGNAL</i>}
+                    <span>{candidate.avatar}</span>{selected && <i>♥ MY SIGNAL</i>}
                   </div>
                   <div className="profileBody">
-                    <p><b>{candidate.name}</b><span>{candidate.age}</span></p>
-                    <small>{candidate.job}</small>
+                    <p><b>{candidate.name}</b><span>{candidate.age}</span></p><small>{candidate.job}</small>
                     <blockquote>“{candidate.intro}”</blockquote>
                     <div>{candidate.interests.map((interest) => <em key={interest}>#{interest}</em>)}</div>
                   </div>
@@ -151,7 +215,7 @@ export default function Home() {
         </section>
       )}
 
-      {screen === "result" && (
+      {screen === "match-result" && (
         <section className="resultScreen">
           <p className="eyebrow">ROUND 01 · RESULT</p>
           <h2>서로의 마음이<br /><em>이어졌어요</em></h2>
@@ -159,18 +223,102 @@ export default function Home() {
           <div className="matchList">
             {mutualMatches.length ? mutualMatches.map(([left, right]) => (
               <div className="matchCard" key={`${left.id}-${right.id}`}>
-                <div><span style={{ background: left.color }}>{left.avatar}</span><b>{left.name}</b></div>
-                <i>♥</i>
+                <div><span style={{ background: left.color }}>{left.avatar}</span><b>{left.name}</b></div><i>♥</i>
                 <div><span style={{ background: right.color }}>{right.avatar}</span><b>{right.name}</b></div>
-                <small>다음 라운드 첫 파트너</small>
+                <small>취향 퀴즈 첫 번째 커플</small>
               </div>
-            )) : <p className="emptyMatch">아직 서로 연결된 시그널이 없어요.<br />다음 라운드에서 새로운 기회가 찾아옵니다.</p>}
+            )) : <p className="emptyMatch">상호 선택이 없어 데모 커플이 자동 배정됩니다.</p>}
           </div>
           <div className="resultActions">
-            <button className="secondaryButton" onClick={startGame}>다시 선택하기</button>
-            <button className="primaryButton" onClick={() => alert("다음 개발 단계에서 취향 퀴즈가 열립니다!")}>취향 퀴즈로 <span>→</span></button>
+            <button className="secondaryButton" onClick={resetAll}>다시 선택하기</button>
+            <button className="primaryButton" onClick={() => setScreen("quiz-intro")}>취향 퀴즈로 <span>→</span></button>
           </div>
-          <p className="privacyNote">모든 선택은 결과 공개 전까지 다른 참가자에게 보이지 않습니다.</p>
+        </section>
+      )}
+
+      {screen === "quiz-intro" && (
+        <section className="quizScreen">
+          <div className="roundHeading">
+            <div><p>ROUND 02 · QUESTION {quizIndex + 1}</p><h2>그림으로 취향 맞히기</h2></div>
+            <div className="scorePill">현재 <b>{score}점</b></div>
+          </div>
+          <div className="quizCouple">
+            <div><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><b>{demoCouple[0].name}</b><small>그리는 사람</small></div>
+            <i>♥</i>
+            <div><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span><b>{demoCouple[1].name}</b><small>맞히는 사람</small></div>
+          </div>
+          <div className="questionReveal">
+            <small>그리는 사람만 확인하세요</small>
+            <h3>{question.prompt}</h3>
+            <p>정답 <b>{question.answer}</b></p>
+          </div>
+          <p className="passDevice">정답을 확인했다면 상대방에게 화면이 보이지 않게 하고 그림을 그려주세요.</p>
+          <button className="primaryButton centerButton" onClick={prepareCanvas}>그림 그리기 시작 <span>→</span></button>
+        </section>
+      )}
+
+      {screen === "draw" && (
+        <section className="quizScreen">
+          <div className="roundHeading">
+            <div><p>ROUND 02 · DRAW</p><h2>{question.prompt}</h2></div>
+            <div className="questionNumber">{quizIndex + 1} / {quizQuestions.length}</div>
+          </div>
+          <div className="canvasToolbar">
+            <span>검은색 펜으로 힌트를 그려주세요</span>
+            <button className="secondaryButton compactButton" onClick={clearCanvas}>모두 지우기</button>
+          </div>
+          <canvas ref={canvasRef} className="drawCanvas" onPointerDown={startLine} onPointerMove={drawLine}
+            onPointerUp={() => setIsDrawing(false)} onPointerCancel={() => setIsDrawing(false)} aria-label="그림 그리기 영역" />
+          <button className="primaryButton centerButton" onClick={() => setScreen("guess")}>그림 완성 · 정답 맞히기 <span>→</span></button>
+        </section>
+      )}
+
+      {screen === "guess" && (
+        <section className="quizScreen">
+          <div className="roundHeading">
+            <div><p>ROUND 02 · GUESS</p><h2>그림이 표현한 답은?</h2></div>
+            <div className="scorePill">현재 <b>{score}점</b></div>
+          </div>
+          <div className="guessLayout">
+            <div className="drawingPreview">
+              <p>파트너가 그린 그림</p>
+              <canvas className="mirrorCanvas" ref={(canvas) => {
+                if (!canvas || !canvasRef.current) return;
+                canvas.width = canvasRef.current.width;
+                canvas.height = canvasRef.current.height;
+                canvas.getContext("2d")?.drawImage(canvasRef.current, 0, 0);
+              }} />
+            </div>
+            <div className="answerPanel">
+              <p>하나를 선택하세요</p>
+              <div className="answerGrid">
+                {question.options.map((option, index) => (
+                  <button key={option} className={selectedAnswer === option ? "chosen" : ""}
+                    onClick={() => setSelectedAnswer(option)} aria-pressed={selectedAnswer === option}>
+                    <span>{index + 1}</span>{option}
+                  </button>
+                ))}
+              </div>
+              <button className="primaryButton fullButton" disabled={!selectedAnswer} onClick={submitGuess}>정답 제출하기</button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {screen === "quiz-result" && (
+        <section className="resultScreen quizFinal">
+          <p className="eyebrow">ROUND 02 · COMPLETE</p>
+          <h2>우리의 취향 싱크는<br /><em>{score * 20}%</em></h2>
+          <div className="finalScore"><b>{score}</b><span>/ {quizQuestions.length} 정답</span></div>
+          <div className="answerHistory">
+            {answers.map((correct, index) => <span className={correct ? "correct" : "wrong"} key={index}>{index + 1}</span>)}
+          </div>
+          <p className="resultMessage">{score >= 4 ? "말하지 않아도 통하는 환상의 호흡이에요!" : score >= 2 ? "서로의 취향을 알아가는 좋은 시작이에요." : "다른 취향만큼 알아갈 이야기도 많겠네요!"}</p>
+          <div className="resultActions">
+            <button className="secondaryButton" onClick={() => { setQuizIndex(0); setScore(0); setAnswers([]); setScreen("quiz-intro"); }}>퀴즈 다시 하기</button>
+            <button className="primaryButton" onClick={() => setScreen("landing")}>처음으로 <span>→</span></button>
+          </div>
+          <p className="privacyNote">실제 온라인 버전에서는 모든 커플이 동시에 플레이하고 점수 순위가 집계됩니다.</p>
         </section>
       )}
     </main>
