@@ -193,6 +193,25 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .roomCard > .primaryButton { width: 100%; padding-block: 13px; }
 .lobbySafety { display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 17px 20px; background: rgba(75,62,101,.15); border: 1px solid rgba(151,129,201,.2); border-radius: 15px; }
 .lobbySafety > span { font-size: 25px; }.lobbySafety > div { flex: 1; }.lobbySafety b, .lobbySafety p { display: block; margin: 0; }.lobbySafety p { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.createRoomScreen { width: min(1120px, calc(100% - 40px)); margin: auto; padding: 55px 0 90px; }
+.createRoomHeading { display: flex; align-items: end; justify-content: space-between; gap: 30px; margin-bottom: 32px; }.createRoomHeading h1 { margin: 8px 0 13px; font-size: clamp(42px, 5vw, 66px); }.createRoomHeading > div > p:last-child { max-width: 650px; color: var(--muted); line-height: 1.6; }
+.roomBuilder { display: grid; grid-template-columns: 1.3fr .7fr; align-items: start; gap: 17px; }
+.roomFormPanel, .roomPreview { background: var(--panel); border: 1px solid var(--line); border-radius: 21px; }
+.roomFormPanel { padding: 8px 27px; }
+.formSection { display: grid; grid-template-columns: 34px 1fr; gap: 13px; padding: 24px 0; border-bottom: 1px solid var(--line); }.formSection:last-child { border-bottom: 0; }
+.formStep { width: 30px; height: 30px; display: grid; place-items: center; color: #ff94b4; background: rgba(255,105,151,.1); border-radius: 50%; font-size: 9px; font-weight: 900; }
+.formSection label { color: white; font-size: 13px; font-weight: 900; }.formSection > div > p { margin: 5px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.formSection > input, .formSection > select { grid-column: 2; width: 100%; min-height: 49px; padding: 0 14px; color: white; background: #100e16; border: 1px solid var(--line); border-radius: 11px; font: inherit; }.formSection > select option { color: #17131e; background: white; }
+.formSection > small { grid-column: 2; margin-top: -7px; color: #756c80; text-align: right; font-size: 9px; }
+.capacityChoices { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 5px; }
+.capacityChoices label { display: flex; gap: 11px; padding: 16px; background: #121017; border: 1px solid var(--line); border-radius: 13px; cursor: pointer; }.capacityChoices label.selected { border-color: var(--pink); background: rgba(255,105,151,.08); box-shadow: 0 0 0 3px rgba(255,105,151,.07); }
+.capacityChoices input { margin-top: 3px; accent-color: var(--pink); }.capacityChoices b, .capacityChoices small { display: block; }.capacityChoices b { font-size: 19px; }.capacityChoices small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.ageRange { grid-column: 2; display: flex; align-items: end; gap: 8px; margin-top: 5px; }.ageRange label { color: #8d8398; font-size: 9px; }.ageRange input { width: 90px; min-height: 47px; display: block; margin-top: 6px; padding: 0 10px; color: white; background: #100e16; border: 1px solid var(--line); border-radius: 10px; font: inherit; }.ageRange > span { padding-bottom: 14px; color: #8d8398; font-size: 10px; }
+.fieldError { grid-column: 2; margin: 0 !important; color: #ff9a9a !important; font-size: 10px !important; }
+.roomPreview { position: sticky; top: 20px; padding: 27px; }.roomPreview h2 { min-height: 63px; margin: 10px 0 20px; font-size: 26px; line-height: 1.25; }
+.previewRule { display: flex; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }.previewRule span { color: var(--muted); font-size: 10px; }.previewRule b { font-size: 11px; }
+.previewSeats { display: flex; gap: 6px; margin: 21px 0; }.previewSeats span { width: 32px; height: 32px; display: grid; place-items: center; color: #655c70; background: #121017; border: 1px dashed #4d4557; border-radius: 50%; font-size: 10px; }.previewSeats span:first-child { color: white; background: linear-gradient(145deg, var(--pink), var(--violet)); border: 0; }
+.creatorRule { color: #857a90; font-size: 9px; line-height: 1.6; }.roomPreview .primaryButton { width: 100%; margin-top: 12px; }
 .waitingRoom { width: min(1120px, calc(100% - 40px)); margin: auto; padding: 55px 0 90px; }
 .waitingHeader { display: flex; justify-content: space-between; align-items: end; gap: 30px; }
 .waitingHeader h1 { margin: 8px 0 12px; font-size: clamp(40px, 5vw, 64px); }.waitingHeader > div > p:last-child { color: var(--muted); }
@@ -488,6 +507,10 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .lobbyHeading .secondaryButton { padding: 11px; font-size: 10px; }
   .roomGrid { grid-template-columns: 1fr; }
   .lobbySafety { align-items: start; }
+  .createRoomHeading { display: block; }.createRoomHeading .secondaryButton { margin-top: 16px; }
+  .roomBuilder { grid-template-columns: 1fr; }.roomPreview { position: static; }
+  .capacityChoices { grid-template-columns: 1fr; }
+  .ageRange { flex-wrap: wrap; }.ageRange input { width: 100%; }.ageRange label { flex: 1; min-width: 110px; }
   .waitingHeader { display: block; }.waitingHeader .secondaryButton { margin-top: 18px; }
   .waitingStatus, .waitingFooter { align-items: flex-start; flex-direction: column; }
   .waitingProfileGrid { grid-template-columns: 1fr; }

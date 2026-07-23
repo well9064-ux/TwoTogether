@@ -15,7 +15,7 @@ type Player = {
 };
 
 type Screen =
-  | "login" | "signup" | "profile" | "verify" | "lobby" | "waiting-room"
+  | "login" | "signup" | "profile" | "verify" | "lobby" | "create-room" | "waiting-room"
   | "landing" | "signal" | "match-result"
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
   | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
@@ -29,6 +29,18 @@ type KitchenOrder = {
   id: number;
   burger: { name: string; recipe: Ingredient[] };
   sides: SideItem[];
+};
+type RoomConfig = {
+  id: string;
+  title: string;
+  people: number;
+  capacity: 4 | 6;
+  tag: string;
+  time: string;
+  minAge: number;
+  maxAge: number;
+  region: string;
+  isMine?: boolean;
 };
 
 const players: Player[] = [
@@ -133,6 +145,11 @@ const makeKitchenOrder = (id: number): KitchenOrder => {
 const initialVotes: Record<string, string> = {
   a1: "b2", a2: "b1", a3: "b3", b1: "a2", b2: "a3", b3: "a3",
 };
+const defaultRooms: RoomConfig[] = [
+  { id: "room-01", title: "퇴근 후 설레는 한 판", people: 4, capacity: 6, tag: "초보 환영", time: "약 25분", minAge: 25, maxAge: 35, region: "모든 지역" },
+  { id: "room-02", title: "취향부터 천천히", people: 2, capacity: 6, tag: "대화 중심", time: "약 30분", minAge: 27, maxAge: 39, region: "서울" },
+  { id: "room-03", title: "주말의 인연", people: 3, capacity: 4, tag: "곧 시작", time: "약 20분", minAge: 24, maxAge: 32, region: "경기" },
+];
 
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "버거 팀워크", "최종 선택"];
 const medalInfo = [
@@ -224,6 +241,13 @@ export default function Home() {
   const [profilePhoto, setProfilePhoto] = useState("");
   const [profileReturn, setProfileReturn] = useState<"verify" | "lobby">("verify");
   const [isReady, setIsReady] = useState(false);
+  const [roomTitle, setRoomTitle] = useState("");
+  const [roomMinAge, setRoomMinAge] = useState(25);
+  const [roomMaxAge, setRoomMaxAge] = useState(35);
+  const [roomRegion, setRoomRegion] = useState("모든 지역");
+  const [roomCapacity, setRoomCapacity] = useState<4 | 6>(6);
+  const [createdRoom, setCreatedRoom] = useState<RoomConfig | null>(null);
+  const [activeRoom, setActiveRoom] = useState<RoomConfig>(defaultRooms[0]);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -322,14 +346,36 @@ export default function Home() {
     transitionTo("lobby");
   };
 
-  const joinLobbyRoom = () => {
+  const joinLobbyRoom = (room: RoomConfig) => {
     if (!isVerified) {
       setAuthNotice("실제 참가자가 있는 게임방에 들어가려면 먼저 본인·연령 확인이 필요해요.");
       transitionTo("verify");
       return;
     }
+    setActiveRoom(room);
     setIsReady(false);
     transitionTo("waiting-room");
+  };
+
+  const createRoom = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!roomTitle.trim() || roomMinAge > roomMaxAge) return;
+    const room: RoomConfig = {
+      id: "mine-room",
+      title: roomTitle.trim(),
+      people: 1,
+      capacity: roomCapacity,
+      tag: "내가 만든 방",
+      time: roomCapacity === 4 ? "약 20분" : "약 25분",
+      minAge: roomMinAge,
+      maxAge: roomMaxAge,
+      region: roomRegion,
+      isMine: true,
+    };
+    setCreatedRoom(room);
+    setActiveRoom(room);
+    setAuthNotice(`‘${room.title}’ 방이 만들어졌어요. 참가자를 기다려 보세요.`);
+    transitionTo("lobby");
   };
 
   const saveProfile = (event: React.FormEvent<HTMLFormElement>) => {
@@ -966,23 +1012,19 @@ export default function Home() {
           </div>
           <div className="lobbyHeading">
             <div><p className="eyebrow">LIVE ROOMS</p><h2>참가 가능한 게임방</h2></div>
-            <button className="secondaryButton" type="button" onClick={() => setAuthNotice("방 만들기는 다음 개발 단계에서 서버 매칭과 함께 연결할 예정이에요.")}>＋ 새 방 만들기</button>
+            <button className="secondaryButton" type="button" onClick={() => transitionTo("create-room")}>＋ 새 방 만들기</button>
           </div>
           <div className="roomGrid">
-            {[
-              { title: "퇴근 후 설레는 한 판", people: 4, tag: "초보 환영", time: "약 25분" },
-              { title: "취향부터 천천히", people: 2, tag: "대화 중심", time: "약 30분" },
-              { title: "주말의 인연", people: 5, tag: "곧 시작", time: "약 20분" },
-            ].map((room, index) => (
+            {[...(createdRoom ? [createdRoom] : []), ...defaultRooms].map((room, index) => (
               <article className="roomCard" key={room.title}>
                 <div className="roomTop"><span>ROOM 0{index + 1}</span><i>{room.tag}</i></div>
                 <h3>{room.title}</h3>
-                <p>사랑의 작대기 · 랜덤 미니게임 3개 · 최종 선택</p>
-                <div className="seatRow" aria-label={`6명 중 ${room.people}명 참가`}>
-                  {Array.from({ length: 6 }, (_, seat) => <span className={seat < room.people ? "filled" : ""} key={seat}>{seat < room.people ? "♥" : "+"}</span>)}
+                <p>{room.minAge}–{room.maxAge}세 · {room.region} · 남녀 {room.capacity / 2}:{room.capacity / 2}</p>
+                <div className="seatRow" aria-label={`${room.capacity}명 중 ${room.people}명 참가`}>
+                  {Array.from({ length: room.capacity }, (_, seat) => <span className={seat < room.people ? "filled" : ""} key={seat}>{seat < room.people ? "♥" : "+"}</span>)}
                 </div>
-                <div className="roomMeta"><b>{room.people} / 6명</b><span>{room.time}</span></div>
-                <button className="primaryButton" type="button" onClick={joinLobbyRoom}>
+                <div className="roomMeta"><b>{room.people} / {room.capacity}명</b><span>{room.time}</span></div>
+                <button className="primaryButton" type="button" onClick={() => joinLobbyRoom(room)}>
                   {isVerified ? "참가하기" : "인증 후 참가하기"}
                 </button>
               </article>
@@ -996,15 +1038,65 @@ export default function Home() {
         </section>
       )}
 
+      {screen === "create-room" && (
+        <section className="createRoomScreen" aria-labelledby="create-room-title">
+          <div className="createRoomHeading">
+            <div><p className="eyebrow">CREATE A ROOM</p><h1 id="create-room-title">어떤 사람들과<br /><em>만나고 싶나요?</em></h1><p>방은 누구나 만들 수 있어요. 참가 조건을 정하면 조건에 맞는 사용자만 입장할 수 있습니다.</p></div>
+            <button className="secondaryButton" type="button" onClick={() => transitionTo("lobby")}>취소하고 로비로</button>
+          </div>
+          <form className="roomBuilder" onSubmit={createRoom}>
+            <section className="roomFormPanel">
+              <div className="formSection">
+                <span className="formStep">01</span><div><label htmlFor="room-title">방 제목</label><p>분위기를 알 수 있는 제목을 입력해 주세요.</p></div>
+                <input id="room-title" required maxLength={30} value={roomTitle} onChange={(event) => setRoomTitle(event.target.value)} placeholder="예: 천천히 알아가는 저녁" />
+                <small>{roomTitle.length} / 30</small>
+              </div>
+              <div className="formSection">
+                <span className="formStep">02</span><div><label>참여 인원</label><p>남녀 비율은 언제나 1:1로 유지됩니다.</p></div>
+                <div className="capacityChoices" role="radiogroup" aria-label="참여 인원">
+                  <label className={roomCapacity === 4 ? "selected" : ""}><input type="radio" name="capacity" value="4" checked={roomCapacity === 4} onChange={() => setRoomCapacity(4)} /><span><b>2:2</b><small>총 4명 · 빠른 만남</small></span></label>
+                  <label className={roomCapacity === 6 ? "selected" : ""}><input type="radio" name="capacity" value="6" checked={roomCapacity === 6} onChange={() => setRoomCapacity(6)} /><span><b>3:3</b><small>총 6명 · 다양한 만남</small></span></label>
+                </div>
+              </div>
+              <div className="formSection">
+                <span className="formStep">03</span><div><label>참가 나이</label><p>설정한 나이 범위의 사용자만 입장할 수 있어요.</p></div>
+                <div className="ageRange">
+                  <label htmlFor="room-min-age">최소 나이<input id="room-min-age" type="number" min={19} max={60} value={roomMinAge} onChange={(event) => setRoomMinAge(Number(event.target.value))} /></label>
+                  <span>부터</span>
+                  <label htmlFor="room-max-age">최대 나이<input id="room-max-age" type="number" min={19} max={60} value={roomMaxAge} onChange={(event) => setRoomMaxAge(Number(event.target.value))} /></label>
+                  <span>까지</span>
+                </div>
+                {roomMinAge > roomMaxAge && <p className="fieldError" role="alert">최대 나이는 최소 나이보다 높아야 합니다.</p>}
+              </div>
+              <div className="formSection">
+                <span className="formStep">04</span><div><label htmlFor="room-region">참가 지역</label><p>모든 지역을 허용하거나 하나의 지역을 선택하세요.</p></div>
+                <select id="room-region" value={roomRegion} onChange={(event) => setRoomRegion(event.target.value)}>
+                  {["모든 지역", "서울", "경기", "인천", "강원", "충청", "전라", "경상", "제주"].map((region) => <option key={region}>{region}</option>)}
+                </select>
+              </div>
+            </section>
+            <aside className="roomPreview">
+              <p className="eyebrow">ROOM PREVIEW</p><h2>{roomTitle.trim() || "방 제목을 입력해 주세요"}</h2>
+              <div className="previewRule"><span>인원</span><b>남 {roomCapacity / 2}명 · 여 {roomCapacity / 2}명</b></div>
+              <div className="previewRule"><span>나이</span><b>{roomMinAge}–{roomMaxAge}세</b></div>
+              <div className="previewRule"><span>지역</span><b>{roomRegion}</b></div>
+              <div className="previewSeats">{Array.from({ length: roomCapacity }, (_, index) => <span key={index}>{index === 0 ? "♥" : "+"}</span>)}</div>
+              <p className="creatorRule">방 생성은 무료이며 본인인증 전에도 가능합니다. 실제 참가 시에는 인증이 필요해요.</p>
+              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || roomMinAge > roomMaxAge}>이 조건으로 방 만들기</button>
+            </aside>
+          </form>
+        </section>
+      )}
+
       {screen === "waiting-room" && (
         <section className="waitingRoom">
           <div className="waitingHeader">
-            <div><p className="eyebrow">ROOM 01 · WAITING</p><h1>퇴근 후 설레는 한 판</h1><p>참가자들의 프로필을 둘러보고 모두 준비될 때까지 기다려 주세요.</p></div>
+            <div><p className="eyebrow">WAITING ROOM · {activeRoom.capacity === 4 ? "2:2" : "3:3"}</p><h1>{activeRoom.title}</h1><p>{activeRoom.minAge}–{activeRoom.maxAge}세 · {activeRoom.region} · 참가자들의 프로필을 확인해 보세요.</p></div>
             <button className="secondaryButton" type="button" onClick={() => transitionTo("lobby")}>로비로 나가기</button>
           </div>
           <div className="waitingStatus" role="status">
-            <div><span className="pulseDot" />현재 <b>4명</b>이 기다리고 있어요</div>
-            <p>3:3 매칭까지 2자리 남았습니다</p>
+            <div><span className="pulseDot" />현재 <b>{activeRoom.people}명</b>이 기다리고 있어요</div>
+            <p>{activeRoom.capacity === 4 ? "2:2" : "3:3"} 매칭까지 {activeRoom.capacity - activeRoom.people}자리 남았습니다</p>
           </div>
           <div className="waitingProfileGrid" aria-label="대기 중인 참가자 프로필">
             <article className="waitingProfileCard mine">
@@ -1023,7 +1115,7 @@ export default function Home() {
                 <em className="verifyBadge">본인인증 완료 ✓</em>
               </div>
             </article>
-            {[players[3], players[1], players[4]].map((player, index) => (
+            {[players[3], players[1], players[4], players[2], players[5]].slice(0, Math.max(0, activeRoom.people - 1)).map((player, index) => (
               <article className="waitingProfileCard" key={player.id}>
                 <div className="waitingPortrait" style={{ background: `linear-gradient(145deg, ${player.color}, #211b2c)` }}>
                   <span>{player.avatar}</span><i>{index % 2 === 0 ? "여" : "남"}</i>
@@ -1036,7 +1128,7 @@ export default function Home() {
                 </div>
               </article>
             ))}
-            {[1, 2].map((seat) => (
+            {Array.from({ length: activeRoom.capacity - activeRoom.people }, (_, seat) => (
               <article className="waitingProfileCard emptySeat" key={seat}>
                 <span>＋</span><h2>참가자를 기다리는 중</h2><p>새로운 인연이 곧 입장합니다</p>
               </article>

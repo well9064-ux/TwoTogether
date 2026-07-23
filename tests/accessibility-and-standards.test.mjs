@@ -104,7 +104,7 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /role="status"/);
   assert.match(page, /둘만의 다음 장면으로 걸어가는 중/);
   assert.match(page, /aria-busy=\{isTransitioning\}/);
-  assert.match(page, /\| "login" \| "signup" \| "profile" \| "verify" \| "lobby" \| "waiting-room"/);
+  assert.match(page, /\| "login" \| "signup" \| "profile" \| "verify" \| "lobby" \| "create-room" \| "waiting-room"/);
   assert.match(page, /useState<Screen>\("login"\)/);
   assert.match(page, /id="login-email"/);
   assert.match(page, /id="signup-nickname"/);
@@ -112,7 +112,7 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /인증 없이 로비 둘러보기/);
   assert.match(page, /if \(!isVerified\)/);
   assert.match(page, /aria-label="현재 로비 현황"/);
-  assert.match(page, /6명 중 \$\{room\.people\}명 참가/);
+  assert.match(page, /\$\{room\.capacity\}명 중 \$\{room\.people\}명 참가/);
   assert.match(page, /주민등록번호 · 인증 문자 · 연락처 공개값/);
   assert.match(page, /id="profile-photo"/);
   assert.match(page, /id="profile-name"/);
@@ -124,6 +124,15 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /aria-label="대기 중인 참가자 프로필"/);
   assert.match(page, /aria-pressed=\{isReady\}/);
   assert.match(page, /모든 참가자가 모이면 자동으로 게임을 시작합니다/);
+  assert.match(page, /type RoomConfig =/);
+  assert.match(page, /id="room-title"/);
+  assert.match(page, /id="room-min-age"/);
+  assert.match(page, /id="room-max-age"/);
+  assert.match(page, /id="room-region"/);
+  assert.match(page, /role="radiogroup" aria-label="참여 인원"/);
+  assert.match(page, /남녀 비율은 언제나 1:1로 유지됩니다/);
+  assert.match(page, /setCreatedRoom\(room\)/);
+  assert.match(page, /activeRoom\.capacity - activeRoom\.people/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /forced-colors:\s*active/);
