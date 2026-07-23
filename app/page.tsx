@@ -522,7 +522,7 @@ export default function Home() {
     setCreatedRoom(room);
     setActiveRoom(room);
     setMileageBalance((balance) => balance - 500);
-    setMileageNotice("방 생성 비용 500 마일리지가 차감됐어요.");
+    setMileageNotice("");
     setAuthNotice(`‘${room.title}’ 방이 만들어졌고 500 마일리지가 차감됐어요. 남은 마일리지는 ${mileageBalance - 500}이에요.`);
     transitionTo("lobby");
   };
@@ -1213,7 +1213,7 @@ export default function Home() {
           </div>
           <div className="lobbyHeading">
             <div><p className="eyebrow">LIVE ROOMS</p><h2>참가 가능한 게임방</h2></div>
-            <button className="secondaryButton" type="button" onClick={() => { setMileageNotice(""); transitionTo("create-room"); }}>＋ 새 방 만들기 · 500</button>
+            <button className="secondaryButton" type="button" onClick={() => { setMileageNotice(""); transitionTo("create-room"); }}>＋ 새 방 만들기 · 500 마일리지</button>
           </div>
           <form className="roomSearchPanel" onSubmit={(event) => event.preventDefault()} aria-label="맞춤 방 검색">
             <div className="roomSearchHeading"><div><b>내 조건에 맞는 방 찾기</b><p>원하는 나이대와 지역을 선택해 보세요.</p></div><span>{filteredLobbyRooms.length}개 방</span></div>
@@ -2015,7 +2015,7 @@ export default function Home() {
           <div className="friendsTitle">
             <p className="eyebrow">MY HEART ROUND</p>
             <h2>친구와 마일리지</h2>
-            <div className="mileageCard"><span>✦</span><p>보유 마일리지<b>{mileageBalance}</b><small>게임 순위 보상으로 적립됩니다</small></p></div>
+            <div className="mileageCard"><span>✦</span><p>보유 마일리지<b>{mileageBalance}</b><small>가입 보너스와 게임 순위 보상으로 적립됩니다</small></p></div>
           </div>
           <div className="friendList" aria-label="내 친구 3명">
             {demoFriendPlayers.map((friend, index) => (
