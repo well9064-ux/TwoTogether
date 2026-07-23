@@ -1,98 +1,76 @@
-# vinext-starter
+# TwoTogether — Heart Round
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+6명이 게임을 통해 첫인상, 취향, 가치관과 팀워크를 알아가는 소셜 데이팅
+게임 프로토타입입니다.
 
-## Prerequisites
+현재 구현된 범위:
 
-- Node.js `>=22.13.0`
+- 3:3 샘플 참가자 프로필
+- 참가자별 첫인상 선택
+- 상호 선택 매칭 판정
+- 결과 공개와 재시작
+- PC 및 모바일 반응형 화면
 
-## Quick Start
+## 개발 환경
+
+- Node.js `22.13.0` 이상
+- npm
+- Git
+
+## 처음 내려받기
 
 ```bash
+git clone https://github.com/well9064-ux/TwoTogether.git
+cd TwoTogether
 npm install
 npm run dev
+```
+
+브라우저에서 `http://localhost:3000`을 열면 됩니다.
+
+## 개발 및 검증
+
+```bash
+npm run dev
 npm run build
+npm test
 ```
 
-This starter does not use `wrangler.jsonc`.
+- `npm run dev`: 로컬 개발 서버 실행
+- `npm run build`: 배포 가능한 빌드 생성
+- `npm test`: 빌드 후 핵심 화면 서버 렌더링 검사
 
-## Included Shape
+## 커밋과 푸시
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+git checkout main
+git pull --rebase origin main
+git add .
+git commit -m "feat: 변경 내용 요약"
+git push origin main
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+기능 단위로 브랜치를 사용할 때는 다음 흐름을 권장합니다.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+```bash
+git checkout -b codex/feature-name
+git add .
+git commit -m "feat: 변경 내용 요약"
+git push -u origin codex/feature-name
+```
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+## 배포
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+이 저장소는 `.openai/hosting.json`에 Heart Round의 Sites 프로젝트가 연결되어
+있습니다. Codex에서 프로젝트를 연 뒤 빌드가 성공한 상태에서 배포를 요청하면
+현재 커밋을 기준으로 새 버전을 저장하고 비공개 배포합니다.
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+배포 전 확인:
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+```bash
+git status
+npm test
+```
 
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+실제 참가자 데이터, 사진, 연락처와 비밀키는 저장소에 커밋하지 않습니다.
+환경 변수 파일(`.env*`)은 Git에서 제외되어 있습니다.

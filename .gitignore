@@ -22,7 +22,7 @@
 .DS_Store
 *.pem
 .openai/*.log
-.openai/*.log
+.openai/*.tar.gz
 
 # debug
 npm-debug.log*
