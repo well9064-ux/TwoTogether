@@ -146,18 +146,27 @@ const initialVotes: Record<string, string> = {
   a1: "b2", a2: "b1", a3: "b3", b1: "a2", b2: "a3", b3: "a3",
 };
 const defaultRooms: RoomConfig[] = [
-  { id: "room-01", title: "퇴근 후 설레는 한 판", people: 4, capacity: 6, tag: "초보 환영", time: "약 25분", minAge: 25, maxAge: 35, region: "모든 지역" },
-  { id: "room-02", title: "취향부터 천천히", people: 2, capacity: 6, tag: "대화 중심", time: "약 30분", minAge: 27, maxAge: 39, region: "서울" },
-  { id: "room-03", title: "주말의 인연", people: 3, capacity: 4, tag: "곧 시작", time: "약 20분", minAge: 24, maxAge: 32, region: "경기" },
-  { id: "room-04", title: "부산 바다처럼 편하게", people: 4, capacity: 6, tag: "부산 모임", time: "약 25분", minAge: 20, maxAge: 29, region: "부산" },
-  { id: "room-05", title: "서른의 진솔한 대화", people: 2, capacity: 4, tag: "30대", time: "약 20분", minAge: 30, maxAge: 39, region: "서울" },
-  { id: "room-06", title: "대구 맛집 친구부터", people: 3, capacity: 6, tag: "맛집 취향", time: "약 30분", minAge: 23, maxAge: 33, region: "대구" },
-  { id: "room-07", title: "인천 야경 산책", people: 2, capacity: 4, tag: "산책 좋아요", time: "약 20분", minAge: 25, maxAge: 34, region: "인천" },
-  { id: "room-08", title: "광주 문화생활 메이트", people: 4, capacity: 6, tag: "전시·공연", time: "약 25분", minAge: 21, maxAge: 31, region: "광주" },
-  { id: "room-09", title: "대전 카페 탐방", people: 2, capacity: 6, tag: "카페 취향", time: "약 30분", minAge: 20, maxAge: 30, region: "대전" },
-  { id: "room-10", title: "제주에서 천천히", people: 3, capacity: 4, tag: "여행 이야기", time: "약 20분", minAge: 28, maxAge: 40, region: "제주" },
-  { id: "room-11", title: "경기 퇴근길 토크", people: 4, capacity: 6, tag: "직장인", time: "약 25분", minAge: 26, maxAge: 36, region: "경기" },
-  { id: "room-12", title: "울산 취미 공유회", people: 2, capacity: 4, tag: "취미 발견", time: "약 20분", minAge: 22, maxAge: 32, region: "울산" },
+  { id: "room-01", title: "퇴근 후 설레는 한 판", people: 4, capacity: 6, tag: "☕ 편한 대화", time: "약 25분", minAge: 25, maxAge: 35, region: "모든 지역" },
+  { id: "room-02", title: "취향부터 천천히", people: 2, capacity: 6, tag: "💗 진지한 만남", time: "약 30분", minAge: 27, maxAge: 39, region: "서울" },
+  { id: "room-03", title: "주말의 인연", people: 3, capacity: 4, tag: "🎲 게임 집중", time: "약 20분", minAge: 24, maxAge: 32, region: "경기" },
+  { id: "room-04", title: "부산 바다처럼 편하게", people: 4, capacity: 6, tag: "👋 친구부터", time: "약 25분", minAge: 20, maxAge: 29, region: "부산" },
+  { id: "room-05", title: "서른의 진솔한 대화", people: 2, capacity: 4, tag: "💗 진지한 만남", time: "약 20분", minAge: 30, maxAge: 39, region: "서울" },
+  { id: "room-06", title: "대구 맛집 친구부터", people: 3, capacity: 6, tag: "🎨 취미 공유", time: "약 30분", minAge: 23, maxAge: 33, region: "대구" },
+  { id: "room-07", title: "인천 야경 산책", people: 2, capacity: 4, tag: "🌙 차분한 만남", time: "약 20분", minAge: 25, maxAge: 34, region: "인천" },
+  { id: "room-08", title: "광주 문화생활 메이트", people: 4, capacity: 6, tag: "🎨 취미 공유", time: "약 25분", minAge: 21, maxAge: 31, region: "광주" },
+  { id: "room-09", title: "대전 카페 탐방", people: 2, capacity: 6, tag: "☕ 편한 대화", time: "약 30분", minAge: 20, maxAge: 30, region: "대전" },
+  { id: "room-10", title: "제주에서 천천히", people: 3, capacity: 4, tag: "🌙 차분한 만남", time: "약 20분", minAge: 28, maxAge: 40, region: "제주" },
+  { id: "room-11", title: "경기 퇴근길 토크", people: 4, capacity: 6, tag: "☕ 편한 대화", time: "약 25분", minAge: 26, maxAge: 36, region: "경기" },
+  { id: "room-12", title: "울산 취미 공유회", people: 2, capacity: 4, tag: "🎨 취미 공유", time: "약 20분", minAge: 22, maxAge: 32, region: "울산" },
+];
+
+const roomThemes = [
+  { label: "편한 대화", icon: "☕", description: "부담 없이 가볍게" },
+  { label: "진지한 만남", icon: "💗", description: "연애를 진지하게" },
+  { label: "친구부터", icon: "👋", description: "천천히 친해지기" },
+  { label: "취미 공유", icon: "🎨", description: "공통 관심사 찾기" },
+  { label: "게임 집중", icon: "🎲", description: "즐거운 승부 중심" },
+  { label: "차분한 만남", icon: "🌙", description: "조용하고 편안하게" },
 ];
 
 const waitingReactions = [
@@ -265,6 +274,7 @@ export default function Home() {
   const [roomMaxAge, setRoomMaxAge] = useState("35");
   const [roomRegion, setRoomRegion] = useState("모든 지역");
   const [roomCapacity, setRoomCapacity] = useState<4 | 6>(6);
+  const [roomTheme, setRoomTheme] = useState(roomThemes[0].label);
   const [createdRoom, setCreatedRoom] = useState<RoomConfig | null>(null);
   const [activeRoom, setActiveRoom] = useState<RoomConfig>(defaultRooms[0]);
   const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
@@ -450,7 +460,7 @@ export default function Home() {
       title: roomTitle.trim(),
       people: 1,
       capacity: roomCapacity,
-      tag: "내가 만든 방",
+      tag: `${roomThemes.find((theme) => theme.label === roomTheme)?.icon ?? "☕"} ${roomTheme}`,
       time: roomCapacity === 4 ? "약 20분" : "약 25분",
       minAge,
       maxAge,
@@ -1173,14 +1183,25 @@ export default function Home() {
                 <small>{roomTitle.length} / 30</small>
               </div>
               <div className="formSection">
-                <span className="formStep">02</span><div><label>참여 인원</label><p>남녀 비율은 언제나 1:1로 유지됩니다.</p></div>
+                <span className="formStep">02</span><div><label>방 테마</label><p>참가자들이 방의 분위기를 미리 알 수 있어요.</p></div>
+                <div className="themeChoices" role="radiogroup" aria-label="방 테마">
+                  {roomThemes.map((theme) => (
+                    <label className={roomTheme === theme.label ? "selected" : ""} key={theme.label}>
+                      <input type="radio" name="room-theme" value={theme.label} checked={roomTheme === theme.label} onChange={() => setRoomTheme(theme.label)} />
+                      <span aria-hidden="true">{theme.icon}</span><div><b>{theme.label}</b><small>{theme.description}</small></div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div className="formSection">
+                <span className="formStep">03</span><div><label>참여 인원</label><p>남녀 비율은 언제나 1:1로 유지됩니다.</p></div>
                 <div className="capacityChoices" role="radiogroup" aria-label="참여 인원">
                   <label className={roomCapacity === 4 ? "selected" : ""}><input type="radio" name="capacity" value="4" checked={roomCapacity === 4} onChange={() => setRoomCapacity(4)} /><span><b>2:2</b><small>총 4명 · 빠른 만남</small></span></label>
                   <label className={roomCapacity === 6 ? "selected" : ""}><input type="radio" name="capacity" value="6" checked={roomCapacity === 6} onChange={() => setRoomCapacity(6)} /><span><b>3:3</b><small>총 6명 · 다양한 만남</small></span></label>
                 </div>
               </div>
               <div className="formSection">
-                <span className="formStep">03</span><div><label>참가 나이</label><p>설정한 나이 범위의 사용자만 입장할 수 있어요.</p></div>
+                <span className="formStep">04</span><div><label>참가 나이</label><p>설정한 나이 범위의 사용자만 입장할 수 있어요.</p></div>
                 <div className="ageRange">
                   <label htmlFor="room-min-age">최소 나이<input id="room-min-age" type="number" min={19} max={60} value={roomMinAge} onChange={(event) => setRoomMinAge(event.target.value.replace(/^0+(?=\d)/, ""))} /></label>
                   <span>부터</span>
@@ -1190,7 +1211,7 @@ export default function Home() {
                 {roomMinAge && roomMaxAge && Number(roomMinAge) > Number(roomMaxAge) && <p className="fieldError" role="alert">최대 나이는 최소 나이보다 높아야 합니다.</p>}
               </div>
               <div className="formSection">
-                <span className="formStep">04</span><div><label htmlFor="room-region">참가 지역</label><p>모든 지역을 허용하거나 하나의 지역을 선택하세요.</p></div>
+                <span className="formStep">05</span><div><label htmlFor="room-region">참가 지역</label><p>모든 지역을 허용하거나 하나의 지역을 선택하세요.</p></div>
                 <select id="room-region" value={roomRegion} onChange={(event) => setRoomRegion(event.target.value)}>
                   {["모든 지역", "서울", "경기", "인천", "강원", "충청", "전라", "경상", "제주"].map((region) => <option key={region}>{region}</option>)}
                 </select>
@@ -1198,6 +1219,7 @@ export default function Home() {
             </section>
             <aside className="roomPreview">
               <p className="eyebrow">ROOM PREVIEW</p><h2>{roomTitle.trim() || "방 제목을 입력해 주세요"}</h2>
+              <div className="roomThemePreview"><span>{roomThemes.find((theme) => theme.label === roomTheme)?.icon}</span><b>{roomTheme}</b></div>
               <div className="previewRule"><span>인원</span><b>남 {roomCapacity / 2}명 · 여 {roomCapacity / 2}명</b></div>
               <div className="previewRule"><span>나이</span><b>{roomMinAge}–{roomMaxAge}세</b></div>
               <div className="previewRule"><span>지역</span><b>{roomRegion}</b></div>

@@ -211,9 +211,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .capacityChoices { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 5px; }
 .capacityChoices label { display: flex; gap: 11px; padding: 16px; background: #121017; border: 1px solid var(--line); border-radius: 13px; cursor: pointer; }.capacityChoices label.selected { border-color: var(--pink); background: rgba(255,105,151,.08); box-shadow: 0 0 0 3px rgba(255,105,151,.07); }
 .capacityChoices input { margin-top: 3px; accent-color: var(--pink); }.capacityChoices b, .capacityChoices small { display: block; }.capacityChoices b { font-size: 19px; }.capacityChoices small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.themeChoices { grid-column: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 5px; }
+.themeChoices label { display: flex; align-items: center; gap: 9px; padding: 13px 12px; background: #121017; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }.themeChoices label.selected { border-color: var(--pink); background: rgba(255,105,151,.08); box-shadow: 0 0 0 3px rgba(255,105,151,.07); }.themeChoices input { position: absolute; opacity: 0; pointer-events: none; }.themeChoices label > span { font-size: 23px; }.themeChoices b, .themeChoices small { display: block; }.themeChoices b { font-size: 10px; }.themeChoices small { margin-top: 3px; color: var(--muted); font-size: 8px; }
 .ageRange { grid-column: 2; display: flex; align-items: end; gap: 8px; margin-top: 5px; }.ageRange label { color: #8d8398; font-size: 9px; }.ageRange input { width: 90px; min-height: 47px; display: block; margin-top: 6px; padding: 0 10px; color: white; background: #100e16; border: 1px solid var(--line); border-radius: 10px; font: inherit; }.ageRange > span { padding-bottom: 14px; color: #8d8398; font-size: 10px; }
 .fieldError { grid-column: 2; margin: 0 !important; color: #ff9a9a !important; font-size: 10px !important; }
 .roomPreview { position: sticky; top: 20px; padding: 27px; }.roomPreview h2 { min-height: 63px; margin: 10px 0 20px; font-size: 26px; line-height: 1.25; }
+.roomThemePreview { display: flex; align-items: center; gap: 8px; margin-bottom: 13px; padding: 10px 12px; color: #ffd4e1; background: rgba(255,105,151,.09); border: 1px solid rgba(255,105,151,.16); border-radius: 10px; font-size: 10px; }.roomThemePreview span { font-size: 19px; }
 .previewRule { display: flex; justify-content: space-between; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }.previewRule span { color: var(--muted); font-size: 10px; }.previewRule b { font-size: 11px; }
 .previewSeats { display: flex; gap: 6px; margin: 21px 0; }.previewSeats span { width: 32px; height: 32px; display: grid; place-items: center; color: #655c70; background: #121017; border: 1px dashed #4d4557; border-radius: 50%; font-size: 10px; }.previewSeats span:first-child { color: white; background: linear-gradient(145deg, var(--pink), var(--violet)); border: 0; }
 .creatorRule { color: #857a90; font-size: 9px; line-height: 1.6; }.roomPreview .primaryButton { width: 100%; margin-top: 12px; }
@@ -530,7 +533,7 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .lobbySafety { align-items: start; }
   .createRoomHeading { display: block; }.createRoomHeading .secondaryButton { margin-top: 16px; }
   .roomBuilder { grid-template-columns: 1fr; }.roomPreview { position: static; }
-  .capacityChoices { grid-template-columns: 1fr; }
+  .capacityChoices, .themeChoices { grid-template-columns: 1fr; }
   .ageRange { flex-wrap: wrap; }.ageRange input { width: 100%; }.ageRange label { flex: 1; min-width: 110px; }
   .waitingHeader { display: block; }.waitingHeader .secondaryButton { margin-top: 18px; }
   .waitingStatus, .waitingFooter { align-items: flex-start; flex-direction: column; }
