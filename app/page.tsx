@@ -17,7 +17,10 @@ type Player = {
 type Screen =
   | "landing" | "signal" | "match-result"
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
-  | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result";
+  | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
+  | "burger-intro" | "burger-play" | "burger-result";
+
+type Ingredient = "bun" | "patty" | "cheese" | "lettuce" | "tomato";
 
 const players: Player[] = [
   { id: "a1", name: "민준", age: 29, job: "서비스 기획자", intro: "좋은 카페와 느긋한 산책을 좋아해요.", interests: ["커피", "여행"], avatar: "민", color: "#7456f1", team: "A" },
@@ -85,15 +88,30 @@ const compatibilityQuestions = [
   },
 ];
 
+const ingredientInfo: Record<Ingredient, { label: string; icon: string }> = {
+  bun: { label: "빵", icon: "🍞" },
+  patty: { label: "패티", icon: "🥩" },
+  cheese: { label: "치즈", icon: "🧀" },
+  lettuce: { label: "양상추", icon: "🥬" },
+  tomato: { label: "토마토", icon: "🍅" },
+};
+
+const burgerOrders: { name: string; recipe: Ingredient[] }[] = [
+  { name: "클래식 버거", recipe: ["bun", "patty", "cheese", "lettuce", "bun"] },
+  { name: "프레시 버거", recipe: ["bun", "lettuce", "tomato", "patty", "bun"] },
+  { name: "치즈 더블", recipe: ["bun", "cheese", "patty", "cheese", "bun"] },
+  { name: "토마토 치즈", recipe: ["bun", "patty", "tomato", "cheese", "bun"] },
+];
+
 const initialVotes: Record<string, string> = {
   a1: "b2", a2: "b1", a3: "b3", b1: "a2", b2: "a3", b3: "a3",
 };
 
-const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "최종 선택"];
+const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "버거 팀워크", "최종 선택"];
 
 type MusicTheme = { title: string; melody: number[]; chords: number[][]; tempo: number };
 
-const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree", MusicTheme> = {
+const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour", MusicTheme> = {
   roundOne: {
     title: "첫눈에",
     melody: [587.33, 659.25, 739.99, 880, 830.61, 739.99, 659.25, 587.33, 554.37, 659.25, 739.99, 987.77, 880, 830.61, 739.99, 659.25],
@@ -127,6 +145,17 @@ const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree", MusicTheme> = 
     ],
     tempo: 330,
   },
+  roundFour: {
+    title: "달콤한 주방",
+    melody: [659.25, 783.99, 880, 1046.5, 880, 783.99, 698.46, 783.99, 587.33, 698.46, 783.99, 987.77, 880, 783.99, 698.46, 587.33],
+    chords: [
+      [261.63, 329.63, 392],
+      [293.66, 369.99, 440],
+      [220, 277.18, 329.63],
+      [246.94, 311.13, 369.99],
+    ],
+    tempo: 280,
+  },
 };
 
 export default function Home() {
@@ -146,6 +175,13 @@ export default function Home() {
   const [secondChoice, setSecondChoice] = useState<number | null>(null);
   const [compatScore, setCompatScore] = useState(0);
   const [compatHistory, setCompatHistory] = useState<boolean[]>([]);
+  const [burgerTime, setBurgerTime] = useState(45);
+  const [burgerScore, setBurgerScore] = useState(0);
+  const [burgerOrderIndex, setBurgerOrderIndex] = useState(0);
+  const [burgerStack, setBurgerStack] = useState<Ingredient[]>([]);
+  const [bunStock, setBunStock] = useState(0);
+  const [pattyStock, setPattyStock] = useState(0);
+  const [burgerMistakes, setBurgerMistakes] = useState(0);
   const [musicStarted, setMusicStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(60);
@@ -171,8 +207,10 @@ export default function Home() {
   const drawerPlayer = demoCouple[quizIndex % 2];
   const guesserPlayer = demoCouple[(quizIndex + 1) % 2];
   const compatQuestion = compatibilityQuestions[compatIndex];
-  const musicRound: keyof typeof musicThemes = screen.startsWith("compat-")
-    ? "roundThree"
+  const burgerOrder = burgerOrders[burgerOrderIndex % burgerOrders.length];
+  const musicRound: keyof typeof musicThemes = screen.startsWith("burger-")
+    ? "roundFour"
+    : screen.startsWith("compat-") ? "roundThree"
     : screen === "landing" || screen === "signal" || screen === "match-result"
       ? "roundOne" : "roundTwo";
   const currentTrack = musicThemes[musicRound];
@@ -272,6 +310,21 @@ export default function Home() {
     }
   }, [screen]);
 
+  useEffect(() => {
+    if (screen !== "burger-play") return;
+    const timer = window.setInterval(() => {
+      setBurgerTime((time) => {
+        if (time <= 1) {
+          window.clearInterval(timer);
+          transitionTo("burger-result");
+          return 0;
+        }
+        return time - 1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [screen]);
+
   const resetAll = () => {
     setCurrentIndex(0);
     setVotes(initialVotes);
@@ -288,6 +341,13 @@ export default function Home() {
     setSecondChoice(null);
     setCompatScore(0);
     setCompatHistory([]);
+    setBurgerTime(45);
+    setBurgerScore(0);
+    setBurgerOrderIndex(0);
+    setBurgerStack([]);
+    setBunStock(0);
+    setPattyStock(0);
+    setBurgerMistakes(0);
     ensureMusic();
     transitionTo("signal");
   };
@@ -384,6 +444,38 @@ export default function Home() {
     transitionTo("compat-intro");
   };
 
+  const startBurgerRound = () => {
+    setBurgerTime(45);
+    setBurgerScore(0);
+    setBurgerOrderIndex(0);
+    setBurgerStack([]);
+    setBunStock(0);
+    setPattyStock(0);
+    setBurgerMistakes(0);
+    transitionTo("burger-play");
+  };
+
+  const addBurgerIngredient = (ingredient: Ingredient) => {
+    if (ingredient === "bun" && bunStock < 1) return;
+    if (ingredient === "patty" && pattyStock < 1) return;
+    const expected = burgerOrder.recipe[burgerStack.length];
+    if (ingredient !== expected) {
+      setBurgerMistakes((count) => count + 1);
+      setBurgerStack([]);
+      return;
+    }
+    if (ingredient === "bun") setBunStock((stock) => stock - 1);
+    if (ingredient === "patty") setPattyStock((stock) => stock - 1);
+    const nextStack = [...burgerStack, ingredient];
+    if (nextStack.length === burgerOrder.recipe.length) {
+      setBurgerScore((value) => value + 1);
+      setBurgerOrderIndex((index) => index + 1);
+      setBurgerStack([]);
+      return;
+    }
+    setBurgerStack(nextStack);
+  };
+
   return (
     <>
       <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
@@ -432,7 +524,7 @@ export default function Home() {
             <p className="heroDescription">6명이 함께하는 소셜 게임. 첫인상부터 취향과 가치관까지 자연스럽게 알아가세요.</p>
             <div className="heroActions">
               <button className="primaryButton" onClick={resetAll}>데모 시작하기 <span>→</span></button>
-              <span className="sessionInfo"><b>3개 라운드</b><small>첫인상 + 취향 + 상황 궁합</small></span>
+              <span className="sessionInfo"><b>4개 라운드</b><small>첫인상 + 취향 + 궁합 + 팀워크</small></span>
             </div>
           </div>
           <div className="orbit" aria-label="참가자 6명">
@@ -445,7 +537,7 @@ export default function Home() {
           </div>
           <div className="stageStrip">
             {stages.map((stage, index) => (
-              <div className={`stageItem ${index < 3 ? "available" : ""}`} key={stage} aria-current={index === 0 ? "step" : undefined}>
+              <div className={`stageItem ${index < 4 ? "available" : ""}`} key={stage} aria-current={index === 0 ? "step" : undefined}>
                 <span>0{index + 1}</span><b>{stage}</b>{index < stages.length - 1 && <i>—</i>}
               </div>
             ))}
@@ -712,9 +804,95 @@ export default function Home() {
           <p className="resultMessage">{compatScore >= 4 ? "중요한 순간에 같은 방향을 바라보는 커플이에요!" : compatScore >= 2 ? "닮은 점과 다른 점이 적당히 어우러진 커플이에요." : "서로 다른 만큼 새롭게 알아갈 이야기가 많아요!"}</p>
           <div className="resultActions">
             <button className="secondaryButton" onClick={startCompatibility}>다시 해보기</button>
-            <button className="primaryButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
+            <button className="primaryButton" onClick={() => transitionTo("burger-intro")}>햄버거 팀워크로 <span>→</span></button>
           </div>
           <p className="privacyNote">같은 답은 점수가 되지만, 다른 답도 서로를 이해하는 좋은 대화 주제입니다.</p>
+        </section>
+      )}
+
+      {screen === "burger-intro" && (
+        <section className="burgerScreen burgerIntro">
+          <p className="eyebrow">ROUND 04 · TEAMWORK</p>
+          <h2>둘이 함께<br /><em>버거 가게를 열어요</em></h2>
+          <p className="burgerLead">45초 동안 주문서에 적힌 순서대로 햄버거를 완성하세요.</p>
+          <div className="roleCards">
+            <article>
+              <span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span>
+              <div><small>COOK</small><h3>{demoCouple[0].name}</h3><p>빵과 패티를 미리 준비해 주세요.</p></div>
+            </article>
+            <i>+</i>
+            <article>
+              <span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span>
+              <div><small>BUILDER</small><h3>{demoCouple[1].name}</h3><p>주문 순서대로 재료를 쌓아 주세요.</p></div>
+            </article>
+          </div>
+          <p className="passDevice">데모에서는 한 화면에서 두 역할을 함께 조작합니다.</p>
+          <button className="primaryButton centerButton" onClick={startBurgerRound}>가게 문 열기 <span>→</span></button>
+        </section>
+      )}
+
+      {screen === "burger-play" && (
+        <section className="burgerScreen">
+          <div className="burgerHud">
+            <div><small>남은 시간</small><b aria-live="polite">{burgerTime}초</b></div>
+            <div><small>완성 주문</small><b>{burgerScore}개</b></div>
+            <div><small>실수</small><b>{burgerMistakes}회</b></div>
+          </div>
+          <div className="burgerGame">
+            <article className="kitchenPanel cookPanel">
+              <div className="panelTitle"><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><div><small>COOK</small><h2>재료 준비</h2></div></div>
+              <p>조립 담당자가 사용할 빵과 패티를 준비하세요.</p>
+              <div className="cookButtons">
+                <button onClick={() => setBunStock((stock) => stock + 1)}><span>🍞</span>빵 굽기<b>{bunStock}개 준비</b></button>
+                <button onClick={() => setPattyStock((stock) => stock + 1)}><span>🥩</span>패티 굽기<b>{pattyStock}개 준비</b></button>
+              </div>
+            </article>
+
+            <article className="orderPanel" aria-live="polite">
+              <small>ORDER {String(burgerOrderIndex + 1).padStart(2, "0")}</small>
+              <h2>{burgerOrder.name}</h2>
+              <div className="recipeStrip" aria-label={`${burgerOrder.name} 재료 순서`}>
+                {burgerOrder.recipe.map((ingredient, index) => (
+                  <span className={index < burgerStack.length ? "done" : index === burgerStack.length ? "current" : ""} key={`${ingredient}-${index}`}>
+                    {ingredientInfo[ingredient].icon}<small>{ingredientInfo[ingredient].label}</small>
+                  </span>
+                ))}
+              </div>
+              <div className="burgerBuild" aria-label="현재 쌓은 햄버거">
+                {burgerStack.length ? burgerStack.map((ingredient, index) => <span key={`${ingredient}-${index}`}>{ingredientInfo[ingredient].icon}</span>) : <p>첫 재료부터 쌓아 주세요</p>}
+              </div>
+            </article>
+
+            <article className="kitchenPanel builderPanel">
+              <div className="panelTitle"><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span><div><small>BUILDER</small><h2>버거 조립</h2></div></div>
+              <p>주문서의 왼쪽부터 재료를 선택하세요. 순서가 틀리면 다시 시작합니다.</p>
+              <div className="ingredientButtons">
+                {(Object.keys(ingredientInfo) as Ingredient[]).map((ingredient) => (
+                  <button key={ingredient} onClick={() => addBurgerIngredient(ingredient)}
+                    disabled={(ingredient === "bun" && bunStock < 1) || (ingredient === "patty" && pattyStock < 1)}>
+                    <span>{ingredientInfo[ingredient].icon}</span>{ingredientInfo[ingredient].label}
+                  </button>
+                ))}
+              </div>
+            </article>
+          </div>
+          <button className="secondaryButton centerButton" onClick={() => transitionTo("burger-result")}>라운드 마치기</button>
+        </section>
+      )}
+
+      {screen === "burger-result" && (
+        <section className="resultScreen quizFinal">
+          <p className="eyebrow">ROUND 04 · COMPLETE</p>
+          <h2>함께 완성한 버거는<br /><em>{burgerScore}개</em></h2>
+          <div className="teamResult" aria-live="polite">
+            <span>♥</span>
+            <p>{burgerScore >= 5 ? "말하지 않아도 손발이 척척 맞는 환상의 주방 팀이에요!" : burgerScore >= 2 ? "역할을 나누니 점점 호흡이 좋아지고 있어요!" : "첫 영업은 연습이죠. 서로 신호를 맞춰 다시 도전해 보세요!"}</p>
+          </div>
+          <div className="resultActions">
+            <button className="secondaryButton" onClick={startBurgerRound}>다시 도전하기</button>
+            <button className="primaryButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
+          </div>
+          <p className="privacyNote">정식 멀티플레이에서는 두 사람이 각자의 화면에서 동시에 역할을 수행합니다.</p>
         </section>
       )}
       </main>
