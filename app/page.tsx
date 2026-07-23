@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Player = {
   id: string;
@@ -39,6 +39,13 @@ const initialVotes: Record<string, string> = {
 
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "최종 선택"];
 
+const musicPatterns: Record<"lobby" | "signal" | "quiz" | "result", number[]> = {
+  lobby: [261.63, 329.63, 392, 329.63],
+  signal: [293.66, 369.99, 440, 369.99, 329.63, 392],
+  quiz: [329.63, 392, 493.88, 440, 392, 369.99],
+  result: [261.63, 329.63, 392, 523.25, 392, 329.63],
+};
+
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("landing");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,8 +55,12 @@ export default function Home() {
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [textHint, setTextHint] = useState("");
+  const [drawingImage, setDrawingImage] = useState("");
+  const [musicStarted, setMusicStarted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const current = players[currentIndex];
   const candidates = players.filter((player) => player.team !== current.team);
@@ -64,6 +75,47 @@ export default function Home() {
   );
   const demoCouple = mutualMatches[0] ?? [players[1], players[3]];
   const question = quizQuestions[quizIndex];
+  const musicRound = screen === "landing" ? "lobby" : screen === "signal" ? "signal"
+    : screen === "match-result" || screen === "quiz-result" ? "result" : "quiz";
+
+  const ensureMusic = () => {
+    const AudioContextClass = window.AudioContext
+      ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const context = audioContextRef.current ?? new AudioContextClass();
+    audioContextRef.current = context;
+    void context.resume();
+    setMusicStarted(true);
+    setIsMuted(false);
+  };
+
+  useEffect(() => {
+    if (!musicStarted || isMuted) return;
+    const context = audioContextRef.current;
+    if (!context) return;
+    const notes = musicPatterns[musicRound];
+    let index = 0;
+
+    const playNote = () => {
+      const now = context.currentTime;
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.value = notes[index % notes.length];
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.035, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.58);
+      index += 1;
+    };
+
+    playNote();
+    const timer = window.setInterval(playNote, 680);
+    return () => window.clearInterval(timer);
+  }, [musicRound, musicStarted, isMuted]);
 
   const resetAll = () => {
     setCurrentIndex(0);
@@ -73,6 +125,8 @@ export default function Home() {
     setAnswers([]);
     setSelectedAnswer("");
     setTextHint("");
+    setDrawingImage("");
+    ensureMusic();
     setScreen("signal");
   };
 
@@ -138,7 +192,8 @@ export default function Home() {
     if (correct) setScore((previous) => previous + 1);
       setSelectedAnswer("");
       setTextHint("");
-    if (quizIndex === quizQuestions.length - 1) setScreen("quiz-result");
+      setDrawingImage("");
+      if (quizIndex === quizQuestions.length - 1) setScreen("quiz-result");
     else {
       setQuizIndex((index) => index + 1);
       setScreen("quiz-intro");
@@ -153,7 +208,17 @@ export default function Home() {
         <button className="brand" onClick={() => setScreen("landing")} aria-label="처음 화면으로">
           <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
-        <span className="prototypeBadge">PRIVATE BETA · 6 PLAYERS</span>
+        <div className="topbarActions">
+          <span className="prototypeBadge">PRIVATE BETA · 6 PLAYERS</span>
+          <button className="soundButton" type="button" aria-pressed={musicStarted && !isMuted}
+            onClick={() => {
+              if (!musicStarted) ensureMusic();
+              else setIsMuted((muted) => !muted);
+            }}>
+            <span aria-hidden="true">{musicStarted && !isMuted ? "♪" : "♩"}</span>
+            {!musicStarted ? "음악 켜기" : isMuted ? "음악 재생" : "음소거"}
+          </button>
+        </div>
       </header>
 
       {screen === "landing" && (
@@ -286,7 +351,11 @@ export default function Home() {
               maxLength={100} placeholder="예: 맵고 빨간색이며 분식집에서 자주 먹어요" />
             <small>{textHint.length} / 100자</small>
           </div>
-          <button className="primaryButton centerButton" onClick={() => setScreen("guess")}>그림 완성 · 정답 맞히기 <span>→</span></button>
+          <button className="primaryButton centerButton" onClick={() => {
+            const canvas = canvasRef.current;
+            if (canvas) setDrawingImage(canvas.toDataURL("image/png"));
+            setScreen("guess");
+          }}>그림 완성 · 정답 맞히기 <span>→</span></button>
         </section>
       )}
 
@@ -299,12 +368,11 @@ export default function Home() {
           <div className="guessLayout">
             <div className="drawingPreview">
               <p>파트너가 그린 그림</p>
-              <canvas className="mirrorCanvas" ref={(canvas) => {
-                if (!canvas || !canvasRef.current) return;
-                canvas.width = canvasRef.current.width;
-                canvas.height = canvasRef.current.height;
-                canvas.getContext("2d")?.drawImage(canvasRef.current, 0, 0);
-              }} />
+              {drawingImage
+                // Canvas가 만든 일회성 data URL이라 이미지 최적화 대상이 아닙니다.
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img className="mirrorCanvas" src={drawingImage} alt="파트너가 그린 힌트 그림" />
+                : <div className="emptyDrawing" role="status">저장된 그림이 없습니다.</div>}
               {textHint && <div className="textHintPreview"><b>글 힌트</b><p>{textHint}</p></div>}
             </div>
             <div className="answerPanel">

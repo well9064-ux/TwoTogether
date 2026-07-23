@@ -80,6 +80,9 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visi
   padding: 9px 13px;
   border-radius: 99px;
 }
+.topbarActions { display: flex; align-items: center; gap: 10px; }
+.soundButton { min-height: 40px; display: flex; align-items: center; gap: 7px; padding: 8px 12px; color: var(--ink); background: #201b2a; border: 1px solid var(--line); border-radius: 99px; cursor: pointer; }
+.soundButton span { color: #ff83a8; font-size: 18px; }
 
 .landing {
   width: min(1180px, calc(100% - 48px));
@@ -203,6 +206,7 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .drawingPreview, .answerPanel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
 .drawingPreview > p, .answerPanel > p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
 .mirrorCanvas { width: 100%; height: 380px; object-fit: contain; background: #fffdf8; border-radius: 13px; }
+.emptyDrawing { min-height: 380px; display: grid; place-items: center; color: #514a5a; background: #fffdf8; border-radius: 13px; }
 .textHintPreview { margin-top: 12px; padding: 13px; color: #ded8e8; background: #24202f; border-radius: 10px; }
 .textHintPreview p { margin: 6px 0 0; color: var(--ink); line-height: 1.55; }
 .answerGrid { display: grid; gap: 10px; }
@@ -225,6 +229,7 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .profileGrid { grid-template-columns: 1fr; }
   .portrait { height: 150px; }
   .prototypeBadge { display: none; }
+  .soundButton { min-width: 44px; }
   .guessLayout { grid-template-columns: 1fr; }
   .drawCanvas { height: 360px; }
   .mirrorCanvas { height: 280px; }

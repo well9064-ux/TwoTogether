@@ -20,6 +20,10 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /aria-describedby="drawing-help"/);
   assert.match(page, /<label htmlFor="text-hint">/);
   assert.match(page, /<textarea id="text-hint"/);
+  assert.match(page, /canvas\.toDataURL\("image\/png"\)/);
+  assert.match(page, /src=\{drawingImage\}/);
+  assert.match(page, /aria-pressed=\{musicStarted && !isMuted\}/);
+  assert.match(page, /setIsMuted/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /forced-colors:\s*active/);
