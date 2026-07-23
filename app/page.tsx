@@ -181,15 +181,15 @@ const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour" |
     tempo: 280,
   },
   roundFive: {
-    title: "우리의 피날레",
-    melody: [523.25, 659.25, 783.99, 1046.5, 987.77, 880, 783.99, 659.25, 587.33, 739.99, 880, 1174.66, 1046.5, 987.77, 880, 783.99],
+    title: "우리가 주인공",
+    melody: [523.25, 659.25, 783.99, 1046.5, 783.99, 1046.5, 1174.66, 1318.51, 698.46, 880, 1046.5, 1396.91, 1318.51, 1174.66, 1046.5, 1046.5],
     chords: [
       [261.63, 329.63, 392],
-      [293.66, 369.99, 440],
-      [329.63, 415.3, 493.88],
-      [246.94, 311.13, 369.99],
+      [349.23, 440, 523.25],
+      [392, 493.88, 587.33],
+      [261.63, 329.63, 392],
     ],
-    tempo: 340,
+    tempo: 230,
   },
 };
 
@@ -306,17 +306,24 @@ export default function Home() {
       const now = context.currentTime;
       const melodyNote = theme.melody[index % theme.melody.length];
 
-      // 짧은 벨과 한 옥타브 위의 잔향을 겹쳐 반짝이는 하프 느낌을 냅니다.
-      playVoice(melodyNote, now, 0.52, 0.045, "sine");
-      playVoice(melodyNote * 2, now + 0.055, 0.28, 0.012, "triangle");
+      if (musicRound === "roundFive") {
+        // 시상식 팡파르처럼 선명한 브라스 선율과 힘 있는 저음을 겹칩니다.
+        playVoice(melodyNote, now, 0.42, 0.085, "triangle");
+        playVoice(melodyNote / 2, now, 0.38, 0.032, "sawtooth");
+        playVoice(melodyNote * 2, now + 0.04, 0.2, 0.018, "square");
+      } else {
+        // 짧은 벨과 한 옥타브 위의 잔향을 겹쳐 반짝이는 하프 느낌을 냅니다.
+        playVoice(melodyNote, now, 0.52, 0.045, "sine");
+        playVoice(melodyNote * 2, now + 0.055, 0.28, 0.012, "triangle");
+      }
 
-      // 네 박마다 피아노 화음과 낮은 현악 베이스를 깔아 로맨틱 영화의 장면처럼 만듭니다.
+      // 네 박마다 메이저 화음과 낮은 베이스를 더해 장면을 크게 받쳐 줍니다.
       if (index % 4 === 0) {
         const chord = theme.chords[Math.floor(index / 4) % theme.chords.length];
         chord.forEach((frequency, chordIndex) => {
-          playVoice(frequency, now + chordIndex * 0.025, 1.3, 0.013, "sine");
+          playVoice(frequency, now + chordIndex * 0.025, musicRound === "roundFive" ? 0.85 : 1.3, musicRound === "roundFive" ? 0.032 : 0.013, musicRound === "roundFive" ? "triangle" : "sine");
         });
-        playVoice(chord[0] / 2, now, 1.45, 0.01, "triangle");
+        playVoice(chord[0] / 2, now, 1.1, musicRound === "roundFive" ? 0.035 : 0.01, musicRound === "roundFive" ? "sawtooth" : "triangle");
       }
       index += 1;
     };
