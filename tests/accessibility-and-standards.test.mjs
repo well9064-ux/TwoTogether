@@ -56,6 +56,14 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /aria-label="대화 내용"/);
   assert.match(page, /htmlFor="chat-message"/);
   assert.match(page, /데모 메시지는 서버로 전송되지 않으며/);
+  assert.match(page, /const \[chatSeconds, setChatSeconds\] = useState\(3600\)/);
+  assert.match(page, /Math\.max\(0, seconds - 1\)/);
+  assert.match(page, /대화 종료/);
+  assert.match(page, /const \[friendStatus, setFriendStatus\]/);
+  assert.match(page, /500 마일리지로 1시간 대화/);
+  assert.match(page, /setMileageBalance\(\(balance\) => balance - 500\)/);
+  assert.match(page, /aria-label=\{`내 마일리지 \$\{mileageBalance\}`\}/);
+  assert.match(page, /결제 정책 준비 중/);
   assert.match(page, /const finalRanking =/);
   assert.match(page, /aria-label="최종 커플 순위"/);
   assert.match(page, /각자 <b>\{mileage\} 마일리지/);

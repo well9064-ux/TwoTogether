@@ -19,7 +19,8 @@ type Screen =
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
   | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
   | "burger-intro" | "burger-play" | "burger-result"
-  | "final-result" | "final-choice-first" | "final-choice-second" | "final-reveal" | "private-chat";
+  | "final-result" | "final-choice-first" | "final-choice-second" | "final-reveal" | "private-chat"
+  | "friends";
 
 type Ingredient = "bun" | "patty" | "cheese" | "lettuce" | "tomato";
 type SideItem = "coffee" | "cola" | "cider" | "fries" | "applePie" | "nugget" | "squidRing";
@@ -242,6 +243,11 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState([
     { from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." },
   ]);
+  const [chatSeconds, setChatSeconds] = useState(3600);
+  const [friendStatus, setFriendStatus] = useState<"none" | "pending" | "friends">("none");
+  const [mileageBalance, setMileageBalance] = useState(800);
+  const [rewardClaimed, setRewardClaimed] = useState(false);
+  const [mileageNotice, setMileageNotice] = useState("");
   const [musicStarted, setMusicStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(60);
@@ -277,9 +283,10 @@ export default function Home() {
     { couple: [players[0], players[4]] as const, score: 92, isOurs: false },
     { couple: [players[2], players[5]] as const, score: 78, isOurs: false },
   ].sort((left, right) => right.score - left.score);
+  const chatTimeLabel = `${String(Math.floor(chatSeconds / 60)).padStart(2, "0")}:${String(chatSeconds % 60).padStart(2, "0")}`;
   const musicRound: keyof typeof musicThemes = screen === "final-result"
     ? "roundFive"
-    : screen.startsWith("final-") || screen === "private-chat"
+    : screen.startsWith("final-") || screen === "private-chat" || screen === "friends"
       ? "roundSix"
     : screen.startsWith("burger-")
     ? "roundFour"
@@ -414,6 +421,14 @@ export default function Home() {
     return () => window.clearInterval(timer);
   }, [screen]);
 
+  useEffect(() => {
+    if (screen !== "private-chat" || chatSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setChatSeconds((seconds) => Math.max(0, seconds - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [chatSeconds, screen]);
+
   const resetAll = () => {
     setCurrentIndex(0);
     setVotes(initialVotes);
@@ -444,6 +459,9 @@ export default function Home() {
     setFinalSecondChoice(null);
     setChatInput("");
     setChatMessages([{ from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." }]);
+    setChatSeconds(3600);
+    setRewardClaimed(false);
+    setMileageNotice("");
     ensureMusic();
     transitionTo("signal");
   };
@@ -599,12 +617,49 @@ export default function Home() {
   const sendChatMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const message = chatInput.trim();
-    if (!message) return;
+    if (!message || chatSeconds <= 0) return;
     setChatMessages((messages) => [...messages, { from: "me", text: message }]);
     setChatInput("");
     window.setTimeout(() => {
       setChatMessages((messages) => [...messages, { from: "partner", text: "나도 오늘 정말 즐거웠어. 천천히 더 이야기해 보자 😊" }]);
     }, 700);
+  };
+
+  const openFinalResults = () => {
+    if (!rewardClaimed) {
+      const ourRank = finalRanking.findIndex((entry) => entry.isOurs);
+      const reward = [300, 200, 100][ourRank] ?? 100;
+      setMileageBalance((balance) => balance + reward);
+      setMileageNotice(`이번 게임 보상 ${reward} 마일리지가 적립됐어요.`);
+      setRewardClaimed(true);
+    }
+    transitionTo("final-result");
+  };
+
+  const openPrivateChat = () => {
+    setChatSeconds(3600);
+    setChatInput("");
+    setChatMessages([{ from: "system", text: "1시간 동안 둘만의 대화가 열렸어요. 편안하게 인사를 건네보세요." }]);
+    transitionTo("private-chat");
+  };
+
+  const requestFriend = () => {
+    if (friendStatus !== "none") return;
+    setFriendStatus("pending");
+    window.setTimeout(() => {
+      setFriendStatus("friends");
+      setChatMessages((messages) => [...messages, { from: "system", text: "서로 친구가 되었어요. 다음에는 친구창에서 다시 만날 수 있어요." }]);
+    }, 700);
+  };
+
+  const reopenFriendChat = () => {
+    if (mileageBalance < 500) {
+      setMileageNotice("마일리지가 부족해요. 충전 기능은 정식 결제 정책 준비 후 제공될 예정입니다.");
+      return;
+    }
+    setMileageBalance((balance) => balance - 500);
+    setMileageNotice("친구와의 1시간 대화 이용료 500 마일리지가 차감됐어요.");
+    openPrivateChat();
   };
 
   return (
@@ -616,6 +671,12 @@ export default function Home() {
           <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
         <div className="topbarActions">
+          <button className="accountPill" type="button" onClick={() => transitionTo("friends")} aria-label={`내 마일리지 ${mileageBalance}`}>
+            <span>✦</span><b>{mileageBalance}</b><small>마일리지</small>
+          </button>
+          <button className="friendShortcut" type="button" onClick={() => transitionTo("friends")}>
+            친구 <b>{friendStatus === "friends" ? 1 : 0}</b>
+          </button>
           <span className="prototypeBadge">PRIVATE BETA · 6 PLAYERS</span>
           <button className="soundButton" type="button" aria-pressed={musicStarted && !isMuted}
             onClick={() => {
@@ -1040,7 +1101,7 @@ export default function Home() {
           </div>
           <div className="resultActions">
             <button className="secondaryButton" onClick={startBurgerRound}>다시 도전하기</button>
-            <button className="primaryButton" onClick={() => transitionTo("final-result")}>최종 결과 보기 <span>→</span></button>
+            <button className="primaryButton" onClick={openFinalResults}>최종 결과 보기 <span>→</span></button>
           </div>
           <p className="privacyNote">정식 멀티플레이에서는 두 사람이 각자의 화면에서 동시에 역할을 수행합니다.</p>
         </section>
@@ -1077,6 +1138,7 @@ export default function Home() {
             <div><span>03</span><p>상황 궁합<b>{compatScore} / {compatibilityQuestions.length}</b></p></div>
             <div><span>04</span><p>팀워크 주문<b>{burgerScore}개</b></p></div>
           </div>
+          {mileageNotice && <p className="mileageNotice" role="status">{mileageNotice}</p>}
           <p className="nextRoundNotice">이제 서로의 최종 호감을 비공개로 선택합니다. 두 사람의 마음이 같을 때만 1:1 대화가 열려요.</p>
           <div className="resultActions">
             <button className="secondaryButton" onClick={() => transitionTo("burger-intro")}>팀워크 다시 하기</button>
@@ -1123,7 +1185,7 @@ export default function Home() {
                 <span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><b>{demoCouple[0].name}</b><i>♥</i><b>{demoCouple[1].name}</b><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span>
               </div>
               <p>둘만 볼 수 있는 조용한 대화 공간을 준비했어요.</p>
-              <button className="primaryButton centerButton" onClick={() => transitionTo("private-chat")}>1:1 대화 시작하기 <span>→</span></button>
+              <button className="primaryButton centerButton" onClick={openPrivateChat}>1:1 대화 시작하기 <span>→</span></button>
             </>
           ) : (
             <>
@@ -1140,7 +1202,10 @@ export default function Home() {
         <section className="chatScreen">
           <header className="chatHeader">
             <div className="chatCouple"><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><i>♥</i><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span></div>
-            <div><h2>{demoCouple[0].name} · {demoCouple[1].name}</h2><p>둘만의 1:1 대화 · 데모</p></div>
+            <div><h2>{demoCouple[0].name} · {demoCouple[1].name}</h2><p>둘만의 1:1 대화 · <b aria-label={`남은 시간 ${chatTimeLabel}`}>{chatTimeLabel}</b></p></div>
+            <button className="friendAddButton" type="button" disabled={friendStatus !== "none"} onClick={requestFriend}>
+              {friendStatus === "none" ? "친구 추가" : friendStatus === "pending" ? "수락 대기 중" : "친구 ✓"}
+            </button>
             <button className="secondaryButton compactButton" onClick={() => transitionTo("landing")}>대화 종료</button>
           </header>
           <div className="chatMessages" aria-live="polite" aria-label="대화 내용">
@@ -1149,14 +1214,41 @@ export default function Home() {
                 ? <p className="systemMessage" key={index}>{message.text}</p>
                 : <div className={`chatBubble ${message.from === "me" ? "mine" : "partner"}`} key={index}>{message.text}</div>
             ))}
+            {chatSeconds === 0 && <div className="chatExpired" role="status"><b>1시간 대화가 종료됐어요</b><p>친구가 되었다면 친구창에서 500 마일리지로 다시 대화할 수 있어요.</p></div>}
           </div>
           <form className="chatComposer" onSubmit={sendChatMessage}>
             <label className="srOnly" htmlFor="chat-message">메시지 입력</label>
             <input id="chat-message" value={chatInput} onChange={(event) => setChatInput(event.target.value)}
               maxLength={200} autoComplete="off" placeholder="편안하게 첫 인사를 건네보세요" />
-            <button className="primaryButton" disabled={!chatInput.trim()} type="submit">보내기</button>
+            <button className="primaryButton" disabled={!chatInput.trim() || chatSeconds === 0} type="submit">보내기</button>
           </form>
           <p className="chatSafety">데모 메시지는 서버로 전송되지 않으며 새로고침하면 사라집니다. 연락처나 민감한 개인정보 공유는 신중히 결정해 주세요.</p>
+        </section>
+      )}
+
+      {screen === "friends" && (
+        <section className="friendsScreen">
+          <div className="friendsTitle">
+            <p className="eyebrow">MY HEART ROUND</p>
+            <h2>친구와 마일리지</h2>
+            <div className="mileageCard"><span>✦</span><p>보유 마일리지<b>{mileageBalance}</b><small>게임 순위 보상으로 적립됩니다</small></p></div>
+          </div>
+          {friendStatus === "friends" ? (
+            <article className="friendCard">
+              <div className="chatCouple"><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><i>♥</i><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span></div>
+              <div><h3>{demoCouple[1].name}</h3><p>Heart Round에서 서로 친구가 되었어요.</p></div>
+              <button className="primaryButton" disabled={mileageBalance < 500} onClick={reopenFriendChat}>500 마일리지로 1시간 대화</button>
+            </article>
+          ) : (
+            <div className="emptyFriends"><span>♡</span><h3>아직 등록된 친구가 없어요</h3><p>최종 선택으로 연결된 상대와 채팅방에서 서로 친구를 추가해 보세요.</p></div>
+          )}
+          {mileageNotice && <p className="mileageNotice" role="status">{mileageNotice}</p>}
+          <div className="chargePreview">
+            <div><h3>마일리지 충전</h3><p>마일리지가 부족할 때 사용할 수 있는 기능입니다.</p></div>
+            <button className="secondaryButton" disabled>결제 정책 준비 중</button>
+          </div>
+          <p className="privacyNote">현재는 데모 데이터입니다. 실제 서비스에서는 로그인 계정에 마일리지·친구·대화 이용 내역이 안전하게 저장됩니다.</p>
+          <button className="secondaryButton centerButton" onClick={() => transitionTo("landing")}>게임으로 돌아가기</button>
         </section>
       )}
       </main>

@@ -81,6 +81,8 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visi
   border-radius: 99px;
 }
 .topbarActions { display: flex; align-items: center; gap: 10px; }
+.accountPill, .friendShortcut { display: flex; align-items: center; gap: 5px; padding: 7px 10px; color: var(--ink); background: #24202e; border: 1px solid var(--line); border-radius: 99px; cursor: pointer; }
+.accountPill span { color: #ffd477; }.accountPill small { color: var(--muted); font-size: 8px; }.friendShortcut { font-size: 10px; }.friendShortcut b { min-width: 17px; height: 17px; display: grid; place-items: center; color: white; background: var(--pink); border-radius: 50%; font-size: 9px; }
 .soundButton { min-height: 40px; display: flex; align-items: center; gap: 7px; padding: 8px 12px; color: var(--ink); background: #201b2a; border: 1px solid var(--line); border-radius: 99px; cursor: pointer; }
 .soundButton span { color: #ff83a8; font-size: 18px; }
 .volumeControl { min-height: 40px; display: flex; align-items: center; overflow: hidden; color: var(--ink); background: #201b2a; border: 1px solid var(--line); border-radius: 99px; }
@@ -334,12 +336,22 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .matchedCouple { display: flex; justify-content: center; align-items: center; gap: 12px; margin: 28px 0; }.matchedCouple span { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; }.matchedCouple i { color: var(--pink); font-style: normal; }
 .chatScreen { width: min(850px, calc(100% - 30px)); min-height: calc(100vh - 95px); display: grid; grid-template-rows: auto 1fr auto auto; margin: 20px auto 0; overflow: hidden; background: #17141e; border: 1px solid var(--line); border-radius: 24px 24px 0 0; }
 .chatHeader { display: flex; align-items: center; gap: 15px; padding: 18px 22px; background: var(--panel); border-bottom: 1px solid var(--line); }.chatHeader > div:nth-child(2) { flex: 1; }.chatHeader h2, .chatHeader p { margin: 0; }.chatHeader h2 { font-size: 17px; }.chatHeader p { margin-top: 4px; color: var(--muted); font-size: 10px; }
+.chatHeader p b { color: #c8baf3; }
+.friendAddButton { padding: 8px 11px; color: #ff91b2; background: rgba(255,105,151,.08); border: 1px solid rgba(255,105,151,.25); border-radius: 99px; cursor: pointer; font-size: 10px; font-weight: 900; }.friendAddButton:disabled { color: #a89db0; cursor: default; }
 .chatCouple { display: flex; align-items: center; }.chatCouple span { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 900; }.chatCouple span + i { margin-left: -4px; }.chatCouple i { z-index: 1; width: 22px; height: 22px; display: grid; place-items: center; color: white; background: var(--pink); border-radius: 50%; font-size: 9px; font-style: normal; }.chatCouple i + span { margin-left: -4px; }
 .chatMessages { display: flex; flex-direction: column; gap: 10px; min-height: 420px; max-height: 58vh; overflow-y: auto; padding: 25px; background: radial-gradient(circle at top, rgba(89,75,120,.16), transparent 55%); }
 .systemMessage { align-self: center; max-width: 80%; margin: 5px 0 15px; padding: 8px 13px; color: #91889d; text-align: center; background: #211d29; border-radius: 99px; font-size: 10px; line-height: 1.5; }
 .chatBubble { max-width: 68%; padding: 11px 14px; border-radius: 16px; line-height: 1.5; font-size: 14px; }.chatBubble.mine { align-self: flex-end; color: white; background: #7b5de1; border-bottom-right-radius: 5px; }.chatBubble.partner { align-self: flex-start; background: #2a2532; border-bottom-left-radius: 5px; }
+.chatExpired { align-self: center; max-width: 430px; margin: auto; padding: 20px; text-align: center; background: #28222f; border: 1px solid var(--line); border-radius: 16px; }.chatExpired p { margin: 7px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
 .chatComposer { display: flex; gap: 9px; padding: 14px; background: var(--panel); border-top: 1px solid var(--line); }.chatComposer input { flex: 1; min-width: 0; padding: 13px 15px; color: var(--ink); background: #100e16; border: 1px solid var(--line); border-radius: 12px; font: inherit; }.chatComposer .primaryButton { padding: 12px 18px; }
 .chatSafety { margin: 0; padding: 10px 15px; color: #756d80; text-align: center; background: #121017; font-size: 9px; line-height: 1.5; }
+.mileageNotice { max-width: 650px; margin: 16px auto; padding: 12px 16px; color: #ffe3a3; text-align: center; background: rgba(255,212,119,.08); border: 1px solid rgba(255,212,119,.2); border-radius: 12px; font-size: 12px; }
+.friendsScreen { width: min(850px, calc(100% - 40px)); margin: auto; padding: 55px 0 85px; }
+.friendsTitle { text-align: center; }.friendsTitle h2 { margin: 8px 0 25px; font-size: clamp(38px, 5vw, 58px); }
+.mileageCard { max-width: 330px; display: flex; align-items: center; justify-content: center; gap: 14px; margin: auto; padding: 17px; text-align: left; background: linear-gradient(145deg, rgba(255,212,119,.16), rgba(255,105,151,.08)); border: 1px solid rgba(255,212,119,.3); border-radius: 17px; }.mileageCard > span { color: #ffd477; font-size: 28px; }.mileageCard p { margin: 0; color: var(--muted); font-size: 10px; }.mileageCard b, .mileageCard small { display: block; }.mileageCard b { margin: 2px 0; color: #fff; font-size: 28px; }.mileageCard small { color: #9f94a9; font-size: 9px; }
+.friendCard { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; margin-top: 30px; padding: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; }.friendCard h3, .friendCard p { margin: 0; }.friendCard p { margin-top: 5px; color: var(--muted); font-size: 11px; }
+.emptyFriends { margin-top: 30px; padding: 42px; text-align: center; background: var(--panel); border: 1px dashed var(--line); border-radius: 18px; }.emptyFriends > span { color: #766b81; font-size: 38px; }.emptyFriends h3 { margin: 10px 0; }.emptyFriends p { color: var(--muted); font-size: 12px; }
+.chargePreview { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-top: 15px; padding: 18px 20px; background: #19161f; border: 1px solid var(--line); border-radius: 15px; }.chargePreview h3, .chargePreview p { margin: 0; }.chargePreview p { margin-top: 5px; color: var(--muted); font-size: 10px; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 800px) {
@@ -356,6 +368,7 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .soundButton span { font-size: 18px; }
   .volumeControl span { min-width: 38px; }
   .trackName { display: none; }
+  .accountPill small, .friendShortcut { display: none; }
   .guessLayout { grid-template-columns: 1fr; }
   .drawCanvas { height: 360px; }
   .mirrorCanvas { height: 280px; }
@@ -371,7 +384,9 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .scoreBreakdown { grid-template-columns: repeat(2, 1fr); }
   .finalChoiceButtons { grid-template-columns: 1fr; }
   .chatHeader { padding: 13px; }.chatHeader .secondaryButton { padding: 8px; font-size: 10px; }
+  .friendAddButton { padding: 7px; font-size: 9px; }
   .chatMessages { min-height: 360px; }.chatBubble { max-width: 85%; }
+  .friendCard { grid-template-columns: auto 1fr; }.friendCard .primaryButton { grid-column: 1 / -1; width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
