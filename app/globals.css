@@ -234,6 +234,30 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .answerHistory { display: flex; justify-content: center; gap: 9px; }.answerHistory span { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; }
 .answerHistory .correct { background: #2eac7d; }.answerHistory .wrong { background: #4b4356; color: #a79eaf; }
 .resultMessage { color: #ded8e8; margin: 24px 0; }
+.compatScreen { width: min(920px, calc(100% - 40px)); margin: auto; padding: 52px 0 80px; }
+.compatProgress { height: 4px; margin: 20px 0 35px; overflow: hidden; background: #2b2635; border-radius: 99px; }
+.compatProgress span { display: block; height: 100%; background: linear-gradient(90deg, #69b9ff, #ff77a3); }
+.scenarioCard { padding: clamp(25px, 5vw, 48px); text-align: center; background: radial-gradient(circle at top, rgba(113,87,178,.25), transparent 60%), var(--panel); border: 1px solid var(--line); border-radius: 24px; }
+.scenarioCard > span { color: #bba8ff; font-size: 10px; font-weight: 900; letter-spacing: .18em; }
+.scenarioCard h3 { margin: 13px 0; font-size: 30px; }.scenarioCard p { max-width: 680px; margin: auto; color: #d8d1e2; line-height: 1.75; }
+.compactCouple { margin: 25px auto 10px; }.compactCouple div > span { width: 60px; height: 60px; font-size: 19px; }
+.answeringPlayer { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+.answeringPlayer > span { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; }
+.answeringPlayer p { margin: 0; }.answeringPlayer small { display: block; margin-top: 5px; color: var(--muted); }
+.scenarioQuestion { max-width: 780px; margin-bottom: 28px; font-size: clamp(25px, 4vw, 38px); line-height: 1.35; }
+.compatOptions { display: grid; gap: 12px; }
+.compatOptions button { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 14px; padding: 18px; color: var(--ink); text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 15px; cursor: pointer; }
+.compatOptions button > span { width: 36px; height: 36px; display: grid; place-items: center; color: var(--muted); background: #2b2635; border-radius: 10px; }
+.compatOptions button p { margin: 0; line-height: 1.45; }
+.compatOptions button:hover, .compatOptions button.chosen { border-color: #ff77a3; background: rgba(255,100,150,.09); }
+.compatOptions button.chosen > span { color: white; background: var(--pink); }
+.revealScreen { text-align: center; }.revealScreen > h2 { font-size: clamp(35px, 5vw, 55px); }
+.compatReveal { display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 18px; margin: 35px 0 20px; }
+.compatReveal > div { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 25px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; }
+.compatReveal > div > span { width: 65px; height: 65px; display: grid; place-items: center; border-radius: 50%; font-weight: 900; }
+.compatReveal > div p { margin: 4px 0 0; color: #d8d1e2; line-height: 1.5; }
+.compatReveal > i { align-self: center; color: var(--muted); font-size: 22px; font-style: normal; font-weight: 900; }
+.compatReveal.matched > i { color: var(--pink); }
 
 @media (max-width: 800px) {
   .landing { display: block; padding-top: 55px; }
@@ -254,6 +278,8 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .mirrorCanvas { height: 280px; }
   .quizCouple { gap: 12px; }
   .roundHeading h2 { font-size: 30px; }
+  .compatReveal { grid-template-columns: 1fr; }
+  .compatReveal > i { transform: rotate(90deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

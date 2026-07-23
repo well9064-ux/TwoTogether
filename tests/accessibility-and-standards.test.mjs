@@ -27,6 +27,10 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /const musicThemes:/);
   assert.match(page, /title: "첫눈에"/);
   assert.match(page, /title: "우리의 대화"/);
+  assert.match(page, /title: "마음의 온도"/);
+  assert.match(page, /const compatibilityQuestions/);
+  assert.match(page, /aria-label="상황 궁합 진행률"/);
+  assert.match(page, /첫 번째 사람의 답은 안전하게 숨겨졌어요/);
   assert.match(page, /playVoice\(melodyNote \* 2/);
   assert.match(page, /playVoice\(chord\[0\] \/ 2/);
   assert.match(page, /aria-label="볼륨 줄이기"/);
