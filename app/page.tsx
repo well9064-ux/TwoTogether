@@ -47,6 +47,7 @@ export default function Home() {
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [textHint, setTextHint] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -71,6 +72,7 @@ export default function Home() {
     setScore(0);
     setAnswers([]);
     setSelectedAnswer("");
+    setTextHint("");
     setScreen("signal");
   };
 
@@ -134,7 +136,8 @@ export default function Home() {
     const correct = selectedAnswer === question.answer;
     setAnswers((previous) => [...previous, correct]);
     if (correct) setScore((previous) => previous + 1);
-    setSelectedAnswer("");
+      setSelectedAnswer("");
+      setTextHint("");
     if (quizIndex === quizQuestions.length - 1) setScreen("quiz-result");
     else {
       setQuizIndex((index) => index + 1);
@@ -143,7 +146,9 @@ export default function Home() {
   };
 
   return (
-    <main>
+    <>
+      <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
+      <main id="main-content">
       <header className="topbar">
         <button className="brand" onClick={() => setScreen("landing")} aria-label="처음 화면으로">
           <span className="brandMark">♥</span><span>HEART ROUND</span>
@@ -172,7 +177,7 @@ export default function Home() {
           </div>
           <div className="stageStrip">
             {stages.map((stage, index) => (
-              <div className={`stageItem ${index < 2 ? "available" : ""}`} key={stage}>
+              <div className={`stageItem ${index < 2 ? "available" : ""}`} key={stage} aria-current={index === 0 ? "step" : undefined}>
                 <span>0{index + 1}</span><b>{stage}</b>{index < stages.length - 1 && <i>—</i>}
               </div>
             ))}
@@ -186,7 +191,9 @@ export default function Home() {
             <div><p>ROUND 01</p><h2>첫인상 시그널</h2></div>
             <div className="progressText"><b>{currentIndex + 1}</b> / {players.length}</div>
           </div>
-          <div className="progressTrack"><span style={{ width: `${((currentIndex + 1) / players.length) * 100}%` }} /></div>
+          <div className="progressTrack" role="progressbar" aria-label="첫인상 선택 진행률" aria-valuemin={1} aria-valuemax={players.length} aria-valuenow={currentIndex + 1}>
+            <span style={{ width: `${((currentIndex + 1) / players.length) * 100}%` }} />
+          </div>
           <div className="playerTurn">
             <span style={{ background: current.color }}>{current.avatar}</span>
             <p><b>{current.name}</b>님의 선택입니다<small>가장 대화해 보고 싶은 한 사람을 골라주세요</small></p>
@@ -268,7 +275,17 @@ export default function Home() {
             <button className="secondaryButton compactButton" onClick={clearCanvas}>모두 지우기</button>
           </div>
           <canvas ref={canvasRef} className="drawCanvas" onPointerDown={startLine} onPointerMove={drawLine}
-            onPointerUp={() => setIsDrawing(false)} onPointerCancel={() => setIsDrawing(false)} aria-label="그림 그리기 영역" />
+            onPointerUp={() => setIsDrawing(false)} onPointerCancel={() => setIsDrawing(false)}
+            aria-label="마우스 또는 터치로 그림을 그리는 영역" aria-describedby="drawing-help">
+            이 브라우저는 그림판을 지원하지 않습니다. 아래의 글 힌트 입력란을 이용해 주세요.
+          </canvas>
+          <div className="accessibleHint">
+            <label htmlFor="text-hint">그림을 사용하기 어려우면 글로 힌트 설명하기</label>
+            <p id="drawing-help">키보드나 화면 읽기 프로그램 이용자는 정답 단어를 제외한 설명을 입력할 수 있습니다.</p>
+            <textarea id="text-hint" value={textHint} onChange={(event) => setTextHint(event.target.value)}
+              maxLength={100} placeholder="예: 맵고 빨간색이며 분식집에서 자주 먹어요" />
+            <small>{textHint.length} / 100자</small>
+          </div>
           <button className="primaryButton centerButton" onClick={() => setScreen("guess")}>그림 완성 · 정답 맞히기 <span>→</span></button>
         </section>
       )}
@@ -288,6 +305,7 @@ export default function Home() {
                 canvas.height = canvasRef.current.height;
                 canvas.getContext("2d")?.drawImage(canvasRef.current, 0, 0);
               }} />
+              {textHint && <div className="textHintPreview"><b>글 힌트</b><p>{textHint}</p></div>}
             </div>
             <div className="answerPanel">
               <p>하나를 선택하세요</p>
@@ -309,7 +327,7 @@ export default function Home() {
         <section className="resultScreen quizFinal">
           <p className="eyebrow">ROUND 02 · COMPLETE</p>
           <h2>우리의 취향 싱크는<br /><em>{score * 20}%</em></h2>
-          <div className="finalScore"><b>{score}</b><span>/ {quizQuestions.length} 정답</span></div>
+          <div className="finalScore" aria-live="polite"><b>{score}</b><span>/ {quizQuestions.length} 정답</span></div>
           <div className="answerHistory">
             {answers.map((correct, index) => <span className={correct ? "correct" : "wrong"} key={index}>{index + 1}</span>)}
           </div>
@@ -321,6 +339,7 @@ export default function Home() {
           <p className="privacyNote">실제 온라인 버전에서는 모든 커플이 동시에 플레이하고 점수 순위가 집계됩니다.</p>
         </section>
       )}
-    </main>
+      </main>
+    </>
   );
 }

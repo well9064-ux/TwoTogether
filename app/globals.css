@@ -11,6 +11,19 @@
 
 * { box-sizing: border-box; }
 
+.skipLink {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 100;
+  padding: 12px 16px;
+  color: #0d0b13;
+  background: white;
+  border-radius: 8px;
+  transform: translateY(-150%);
+}
+.skipLink:focus { transform: translateY(0); }
+
 body {
   margin: 0;
   color: var(--ink);
@@ -23,6 +36,11 @@ body {
 }
 
 button { font: inherit; }
+button, a, textarea { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visible {
+  outline: 3px solid #ffd166;
+  outline-offset: 3px;
+}
 
 .topbar {
   height: 76px;
@@ -176,10 +194,17 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .canvasToolbar { display: flex; justify-content: space-between; align-items: center; margin: 30px 0 12px; color: var(--muted); font-size: 13px; }
 .compactButton { padding: 9px 13px; font-size: 12px; }
 .drawCanvas { width: 100%; height: 480px; background: #fffdf8; border-radius: 20px; touch-action: none; cursor: crosshair; box-shadow: inset 0 0 0 1px rgba(0,0,0,.1), 0 20px 50px rgba(0,0,0,.25); }
+.accessibleHint { position: relative; margin-top: 16px; padding: 18px; background: var(--panel); border: 1px solid var(--line); border-radius: 15px; }
+.accessibleHint label { display: block; font-weight: 800; }
+.accessibleHint p, .accessibleHint small { color: var(--muted); font-size: 12px; }
+.accessibleHint textarea { width: 100%; min-height: 82px; resize: vertical; padding: 13px; color: var(--ink); background: #100e16; border: 1px solid var(--line); border-radius: 10px; }
+.accessibleHint small { display: block; margin-top: 7px; text-align: right; }
 .guessLayout { display: grid; grid-template-columns: 1.1fr .9fr; gap: 22px; margin-top: 32px; }
 .drawingPreview, .answerPanel { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 18px; }
 .drawingPreview > p, .answerPanel > p { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
 .mirrorCanvas { width: 100%; height: 380px; object-fit: contain; background: #fffdf8; border-radius: 13px; }
+.textHintPreview { margin-top: 12px; padding: 13px; color: #ded8e8; background: #24202f; border-radius: 10px; }
+.textHintPreview p { margin: 6px 0 0; color: var(--ink); line-height: 1.55; }
 .answerGrid { display: grid; gap: 10px; }
 .answerGrid button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 15px; text-align: left; color: var(--ink); background: #221e2c; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
 .answerGrid button span { width: 27px; height: 27px; display: grid; place-items: center; background: #302a3d; border-radius: 8px; color: var(--muted); }
@@ -205,4 +230,18 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .mirrorCanvas { height: 280px; }
   .quizCouple { gap: 12px; }
   .roundHeading h2 { font-size: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .primaryButton, .brandMark, .answerGrid button.chosen { border: 2px solid ButtonText; }
+  .progressTrack span { background: Highlight; }
 }
