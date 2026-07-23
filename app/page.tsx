@@ -15,7 +15,7 @@ type Player = {
 };
 
 type Screen =
-  | "login" | "signup" | "verify" | "lobby"
+  | "login" | "signup" | "profile" | "verify" | "lobby" | "waiting-room"
   | "landing" | "signal" | "match-result"
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
   | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
@@ -216,6 +216,14 @@ export default function Home() {
   const [screen, setScreen] = useState<Screen>("login");
   const [authEmail, setAuthEmail] = useState("");
   const [nickname, setNickname] = useState("하트");
+  const [profileName, setProfileName] = useState("김하트");
+  const [profileAge, setProfileAge] = useState("29");
+  const [profileRegion, setProfileRegion] = useState("서울");
+  const [profileJob, setProfileJob] = useState("서비스 기획자");
+  const [profileIntro, setProfileIntro] = useState("좋은 대화와 맛있는 음식을 좋아해요.");
+  const [profilePhoto, setProfilePhoto] = useState("");
+  const [profileReturn, setProfileReturn] = useState<"verify" | "lobby">("verify");
+  const [isReady, setIsReady] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -320,7 +328,30 @@ export default function Home() {
       transitionTo("verify");
       return;
     }
-    transitionTo("landing");
+    setIsReady(false);
+    transitionTo("waiting-room");
+  };
+
+  const saveProfile = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!profileName.trim() || !profileAge || !profileRegion || !profileJob.trim() || !profileIntro.trim()) return;
+    setNickname(profileName.trim());
+    transitionTo(profileReturn);
+  };
+
+  const previewProfilePhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
+      setAuthNotice("5MB 이하의 이미지 파일만 선택해 주세요.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setProfilePhoto(typeof reader.result === "string" ? reader.result : "");
+      setAuthNotice("");
+    };
+    reader.readAsDataURL(file);
   };
 
   const logout = () => {
@@ -733,7 +764,7 @@ export default function Home() {
     <>
       <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
       <main id="main-content" aria-busy={isTransitioning}>
-      {!["login", "signup", "verify"].includes(screen) && <header className="topbar">
+      {!["login", "signup", "profile", "verify"].includes(screen) && <header className="topbar">
         <button className="brand" onClick={() => transitionTo("lobby")} aria-label="로비로">
           <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
@@ -820,7 +851,7 @@ export default function Home() {
             <p className="eyebrow">STEP 1 OF 2</p>
             <h2 id="signup-title">기본 프로필 만들기</h2>
             <p>게임에 필요한 최소 정보만 받아요. 실명과 연락처는 프로필에 공개되지 않습니다.</p>
-            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) transitionTo("verify"); }}>
+            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) { setProfileName(nickname.trim()); setProfileReturn("verify"); transitionTo("profile"); } }}>
               <label htmlFor="signup-nickname">닉네임</label>
               <input id="signup-nickname" required maxLength={12} autoComplete="nickname" value={nickname}
                 onChange={(event) => setNickname(event.target.value)} />
@@ -836,6 +867,53 @@ export default function Home() {
                 disabled={!nickname.trim() || !agreedToTerms || !confirmedAdult}>가입하고 계속하기</button>
             </form>
             <button className="textButton" type="button" onClick={() => transitionTo("login")}>이전으로</button>
+          </div>
+        </section>
+      )}
+
+      {screen === "profile" && (
+        <section className="authCenter profileCenter" aria-labelledby="profile-title">
+          <button className="brand authBrand" type="button" onClick={() => transitionTo(profileReturn === "lobby" ? "lobby" : "signup")}>
+            <span className="brandMark">♥</span><span>HEART ROUND</span>
+          </button>
+          <div className="authCard profileFormCard">
+            <p className="eyebrow">{profileReturn === "verify" ? "PROFILE SETUP" : "EDIT PROFILE"}</p>
+            <h2 id="profile-title">나를 소개해 주세요</h2>
+            <p>이 정보는 게임 참가자들이 대기실과 첫인상 라운드에서 확인합니다.</p>
+            <form onSubmit={saveProfile}>
+              <div className="photoField">
+                <div className="profilePhotoPreview">
+                  {profilePhoto ? (
+                    // 데모에서 사용자가 방금 선택한 로컬 data URL을 즉시 미리보기 합니다.
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={profilePhoto} alt="선택한 프로필 사진 미리보기" />
+                  ) : <span aria-hidden="true">{profileName.slice(0, 1) || "♥"}</span>}
+                </div>
+                <div>
+                  <label className="photoUpload" htmlFor="profile-photo">사진 선택</label>
+                  <input id="profile-photo" className="srOnly" type="file" accept="image/png,image/jpeg,image/webp" onChange={previewProfilePhoto} />
+                  <small>JPG, PNG, WEBP · 최대 5MB</small>
+                  {profilePhoto && <button className="textButton" type="button" onClick={() => setProfilePhoto("")}>사진 삭제</button>}
+                </div>
+              </div>
+              <div className="profileFields">
+                <div><label htmlFor="profile-name">이름 또는 활동명</label><input id="profile-name" required maxLength={12} value={profileName} onChange={(event) => setProfileName(event.target.value)} /></div>
+                <div><label htmlFor="profile-age">나이</label><input id="profile-age" required type="number" min={19} max={99} inputMode="numeric" value={profileAge} onChange={(event) => setProfileAge(event.target.value)} /></div>
+                <div>
+                  <label htmlFor="profile-region">거주지역</label>
+                  <select id="profile-region" required value={profileRegion} onChange={(event) => setProfileRegion(event.target.value)}>
+                    {["서울", "경기", "인천", "강원", "충청", "전라", "경상", "제주"].map((region) => <option key={region}>{region}</option>)}
+                  </select>
+                </div>
+                <div><label htmlFor="profile-job">직업</label><input id="profile-job" required maxLength={30} value={profileJob} onChange={(event) => setProfileJob(event.target.value)} /></div>
+              </div>
+              <label htmlFor="profile-intro">간단한 소개</label>
+              <textarea id="profile-intro" required maxLength={120} rows={3} value={profileIntro} onChange={(event) => setProfileIntro(event.target.value)} />
+              <div className="characterCount" aria-live="polite">{profileIntro.length} / 120</div>
+              {authNotice && <p className="authNotice" role="status">{authNotice}</p>}
+              <button className="primaryButton authSubmit" type="submit">프로필 저장하기</button>
+            </form>
+            <p className="profilePrivacy">실제 서비스에서는 프로필 사진을 비공개 저장소에 보관하고, 신고·차단 시 운영 정책에 따라 검토합니다.</p>
           </div>
         </section>
       )}
@@ -874,7 +952,10 @@ export default function Home() {
               <span className="lobbyAvatar">♥</span>
               <div><b>{nickname}</b><small>{isVerified ? "본인·성인 인증 완료" : "미인증 계정"}</small></div>
               <i className={isVerified ? "verified" : ""}>{isVerified ? "인증 ✓" : "인증 필요"}</i>
-              <button className="textButton" type="button" onClick={logout}>로그아웃</button>
+              <div className="lobbyProfileActions">
+                <button className="textButton" type="button" onClick={() => { setProfileReturn("lobby"); transitionTo("profile"); }}>프로필 수정</button>
+                <button className="textButton" type="button" onClick={logout}>로그아웃</button>
+              </div>
             </div>
           </div>
           {authNotice && <p className="lobbyNotice" role="status">{authNotice}</p>}
@@ -912,6 +993,62 @@ export default function Home() {
             <div><b>모두가 편안한 Heart Round</b><p>불쾌한 언행은 신고·차단할 수 있고, 연락처 공개는 요구하지 않습니다.</p></div>
             <button className="textButton" type="button" onClick={() => setAuthNotice("신고·차단 및 운영자 검토 화면은 서버 기능과 함께 추가할 예정이에요.")}>안전 가이드</button>
           </aside>
+        </section>
+      )}
+
+      {screen === "waiting-room" && (
+        <section className="waitingRoom">
+          <div className="waitingHeader">
+            <div><p className="eyebrow">ROOM 01 · WAITING</p><h1>퇴근 후 설레는 한 판</h1><p>참가자들의 프로필을 둘러보고 모두 준비될 때까지 기다려 주세요.</p></div>
+            <button className="secondaryButton" type="button" onClick={() => transitionTo("lobby")}>로비로 나가기</button>
+          </div>
+          <div className="waitingStatus" role="status">
+            <div><span className="pulseDot" />현재 <b>4명</b>이 기다리고 있어요</div>
+            <p>3:3 매칭까지 2자리 남았습니다</p>
+          </div>
+          <div className="waitingProfileGrid" aria-label="대기 중인 참가자 프로필">
+            <article className="waitingProfileCard mine">
+              <div className="waitingPortrait">
+                {profilePhoto ? (
+                  // 데모에서 사용자가 방금 선택한 로컬 data URL을 즉시 미리보기 합니다.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={profilePhoto} alt={`${profileName} 프로필`} />
+                ) : <span>{profileName.slice(0, 1)}</span>}
+                <i>나</i>
+              </div>
+              <div className="waitingProfileBody">
+                <div><h2>{profileName}</h2><b>{profileAge}세</b></div>
+                <p>{profileRegion} · {profileJob}</p>
+                <blockquote>“{profileIntro}”</blockquote>
+                <em>본인인증 완료 ✓</em>
+              </div>
+            </article>
+            {[players[3], players[1], players[4]].map((player, index) => (
+              <article className="waitingProfileCard" key={player.id}>
+                <div className="waitingPortrait" style={{ background: `linear-gradient(145deg, ${player.color}, #211b2c)` }}>
+                  <span>{player.avatar}</span><i>{index % 2 === 0 ? "여" : "남"}</i>
+                </div>
+                <div className="waitingProfileBody">
+                  <div><h2>{player.name}</h2><b>{player.age}세</b></div>
+                  <p>{index === 1 ? "경기" : "서울"} · {player.job}</p>
+                  <blockquote>“{player.intro}”</blockquote>
+                  <em>본인인증 완료 ✓</em>
+                </div>
+              </article>
+            ))}
+            {[1, 2].map((seat) => (
+              <article className="waitingProfileCard emptySeat" key={seat}>
+                <span>＋</span><h2>참가자를 기다리는 중</h2><p>새로운 인연이 곧 입장합니다</p>
+              </article>
+            ))}
+          </div>
+          <div className="waitingFooter">
+            <div><b>게임 구성</b><p>사랑의 작대기 + 랜덤 미니게임 3개 + 최종 선택 · 약 25분</p></div>
+            <button className={`primaryButton readyButton ${isReady ? "ready" : ""}`} type="button" aria-pressed={isReady} onClick={() => setIsReady((ready) => !ready)}>
+              {isReady ? "준비 완료 ✓" : "게임 준비하기"}
+            </button>
+          </div>
+          {isReady && <p className="readyNotice" role="status">준비가 완료됐어요. 모든 참가자가 모이면 자동으로 게임을 시작합니다.</p>}
         </section>
       )}
 
