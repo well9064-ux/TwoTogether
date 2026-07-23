@@ -24,6 +24,10 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /const \[drawerAnswer, setDrawerAnswer\]/);
   assert.match(page, /const \[choiceOptions, setChoiceOptions\]/);
   assert.match(page, /question\.suggestions/);
+  assert.match(page, /const drawerPlayer = demoCouple\[quizIndex % 2\]/);
+  assert.match(page, /const guesserPlayer = demoCouple\[\(quizIndex \+ 1\) % 2\]/);
+  assert.match(page, /Math\.floor\(quizIndex \/ 2\) \+ 1/);
+  assert.match(page, /Math\.round\(\(score \/ quizQuestions\.length\) \* 100\)/);
   assert.match(page, /disabled=\{!drawerAnswer\.trim\(\)\}/);
   assert.match(page, /disabled=\{!textHint\.trim\(\)\}/);
   assert.doesNotMatch(page, /question\.answer/);

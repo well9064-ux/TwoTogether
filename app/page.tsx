@@ -34,6 +34,7 @@ const quizQuestions = [
   { prompt: "쉬는 날 가장 하고 싶은 것은?", suggestions: ["늦잠", "등산", "쇼핑", "드라이브", "게임", "영화 보기"] },
   { prompt: "내가 좋아하는 계절은?", suggestions: ["봄", "여름", "가을", "겨울", "장마철", "첫눈 오는 날"] },
   { prompt: "첫 데이트로 가장 좋은 장소는?", suggestions: ["영화관", "놀이공원", "미술관", "한강", "아쿠아리움", "맛집"] },
+  { prompt: "받고 싶은 깜짝 선물은?", suggestions: ["꽃다발", "손편지", "향수", "콘서트 티켓", "케이크", "커플 아이템"] },
 ];
 
 const compatibilityQuestions = [
@@ -167,6 +168,8 @@ export default function Home() {
   );
   const demoCouple = mutualMatches[0] ?? [players[1], players[3]];
   const question = quizQuestions[quizIndex];
+  const drawerPlayer = demoCouple[quizIndex % 2];
+  const guesserPlayer = demoCouple[(quizIndex + 1) % 2];
   const compatQuestion = compatibilityQuestions[compatIndex];
   const musicRound: keyof typeof musicThemes = screen.startsWith("compat-")
     ? "roundThree"
@@ -515,9 +518,9 @@ export default function Home() {
             <div className="scorePill">현재 <b>{score}점</b></div>
           </div>
           <div className="quizCouple">
-            <div><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><b>{demoCouple[0].name}</b><small>그리는 사람</small></div>
+            <div><span style={{ background: drawerPlayer.color }}>{drawerPlayer.avatar}</span><b>{drawerPlayer.name}</b><small>그리는 사람 · {Math.floor(quizIndex / 2) + 1}/3</small></div>
             <i>♥</i>
-            <div><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span><b>{demoCouple[1].name}</b><small>맞히는 사람</small></div>
+            <div><span style={{ background: guesserPlayer.color }}>{guesserPlayer.avatar}</span><b>{guesserPlayer.name}</b><small>맞히는 사람</small></div>
           </div>
           <div className="questionReveal">
             <small>그리는 사람만 확인하세요</small>
@@ -603,7 +606,7 @@ export default function Home() {
       {screen === "quiz-result" && (
         <section className="resultScreen quizFinal">
           <p className="eyebrow">ROUND 02 · COMPLETE</p>
-          <h2>우리의 취향 싱크는<br /><em>{score * 20}%</em></h2>
+          <h2>우리의 취향 싱크는<br /><em>{Math.round((score / quizQuestions.length) * 100)}%</em></h2>
           <div className="finalScore" aria-live="polite"><b>{score}</b><span>/ {quizQuestions.length} 정답</span></div>
           <div className="answerHistory">
             {answers.map((correct, index) => <span className={correct ? "correct" : "wrong"} key={index}>{index + 1}</span>)}
