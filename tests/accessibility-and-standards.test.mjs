@@ -55,7 +55,7 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /title: "둘만의 고요한 밤"/);
   assert.match(page, /aria-label="대화 내용"/);
   assert.match(page, /htmlFor="chat-message"/);
-  assert.match(page, /데모 메시지는 서버로 전송되지 않으며/);
+  assert.match(page, /데모 메시지와 사진은 서버로 전송되지 않으며/);
   assert.match(page, /const \[chatSeconds, setChatSeconds\] = useState\(3600\)/);
   assert.match(page, /Math\.max\(0, seconds - 1\)/);
   assert.match(page, /대화 종료/);
@@ -115,11 +115,19 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /\$\{room\.capacity\}명 중 \$\{room\.people\}명 참가/);
   assert.match(page, /주민등록번호 · 인증 문자 · 연락처 공개값/);
   assert.match(page, /id="profile-photo"/);
+  assert.match(page, /type="file" multiple/);
+  assert.match(page, /profilePhotos\.length \+ files\.length > 3/);
+  assert.match(page, /makePrimaryProfilePhoto/);
+  assert.match(page, /removeProfilePhoto/);
   assert.match(page, /id="profile-name"/);
   assert.match(page, /id="profile-age"/);
   assert.match(page, /id="profile-region"/);
   assert.match(page, /id="profile-job"/);
   assert.match(page, /id="profile-intro"/);
+  assert.match(page, /id="chat-image"/);
+  assert.match(page, /previewChatImage/);
+  assert.match(page, /message\.image/);
+  assert.match(page, /\(!chatInput\.trim\(\) && !chatImage\)/);
   assert.match(page, /file\.size > 5 \* 1024 \* 1024/);
   assert.match(page, /aria-label="성별로 구분된 대기 중인 참가자 프로필"/);
   assert.match(page, /aria-pressed=\{isReady\}/);

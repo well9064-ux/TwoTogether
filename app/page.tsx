@@ -42,6 +42,7 @@ type RoomConfig = {
   region: string;
   isMine?: boolean;
 };
+type ChatMessage = { from: string; text: string; image?: string };
 
 const players: Player[] = [
   { id: "a1", name: "민준", age: 29, job: "서비스 기획자", intro: "좋은 카페와 느긋한 산책을 좋아해요.", interests: ["커피", "여행"], avatar: "민", color: "#7456f1", team: "A" },
@@ -266,7 +267,7 @@ export default function Home() {
   const [profileGender, setProfileGender] = useState<"남성" | "여성">("남성");
   const [profileJob, setProfileJob] = useState("서비스 기획자");
   const [profileIntro, setProfileIntro] = useState("좋은 대화와 맛있는 음식을 좋아해요.");
-  const [profilePhoto, setProfilePhoto] = useState("");
+  const [profilePhotos, setProfilePhotos] = useState<string[]>([]);
   const [profileReturn, setProfileReturn] = useState<"verify" | "lobby">("verify");
   const [isReady, setIsReady] = useState(false);
   const [roomTitle, setRoomTitle] = useState("");
@@ -319,9 +320,10 @@ export default function Home() {
   const [finalFirstChoice, setFinalFirstChoice] = useState<boolean | null>(null);
   const [finalSecondChoice, setFinalSecondChoice] = useState<boolean | null>(null);
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState([
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     { from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." },
   ]);
+  const [chatImage, setChatImage] = useState("");
   const [chatSeconds, setChatSeconds] = useState(3600);
   const [chatEndedBy, setChatEndedBy] = useState<string | null>(null);
   const [friendStatus, setFriendStatus] = useState<"none" | "pending" | "friends">("friends");
@@ -340,6 +342,7 @@ export default function Home() {
   const transitionTimerRef = useRef<number | null>(null);
 
   const current = players[currentIndex];
+  const profilePhoto = profilePhotos[0] ?? "";
   const candidates = players.filter((player) => player.team !== current.team);
   const mutualMatches = useMemo(
     () => players
@@ -481,16 +484,47 @@ export default function Home() {
   };
 
   const previewProfilePhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    if (!files.length) return;
+    if (profilePhotos.length + files.length > 3) {
+      setAuthNotice("프로필 사진은 최대 3장까지 등록할 수 있어요.");
+      return;
+    }
+    if (files.some((file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024)) {
+      setAuthNotice("각 사진은 5MB 이하의 JPG, PNG, WEBP 파일이어야 해요.");
+      return;
+    }
+    Promise.all(files.map((file) => new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
+      reader.readAsDataURL(file);
+    }))).then((images) => {
+      setProfilePhotos((currentPhotos) => [...currentPhotos, ...images.filter(Boolean)].slice(0, 3));
+      setAuthNotice("");
+    });
+  };
+
+  const removeProfilePhoto = (index: number) => {
+    setProfilePhotos((photos) => photos.filter((_, photoIndex) => photoIndex !== index));
+  };
+
+  const makePrimaryProfilePhoto = (index: number) => {
+    setProfilePhotos((photos) => [photos[index], ...photos.filter((_, photoIndex) => photoIndex !== index)]);
+  };
+
+  const previewChatImage = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
     if (!file.type.startsWith("image/") || file.size > 5 * 1024 * 1024) {
-      setAuthNotice("5MB 이하의 이미지 파일만 선택해 주세요.");
+      setMileageNotice("채팅 사진은 5MB 이하의 이미지 파일만 첨부할 수 있어요.");
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
-      setProfilePhoto(typeof reader.result === "string" ? reader.result : "");
-      setAuthNotice("");
+      setChatImage(typeof reader.result === "string" ? reader.result : "");
+      setMileageNotice("");
     };
     reader.readAsDataURL(file);
   };
@@ -832,9 +866,10 @@ export default function Home() {
   const sendChatMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const message = chatInput.trim();
-    if (!message || chatSeconds <= 0 || chatEndedBy) return;
-    setChatMessages((messages) => [...messages, { from: "me", text: message }]);
+    if ((!message && !chatImage) || chatSeconds <= 0 || chatEndedBy) return;
+    setChatMessages((messages) => [...messages, { from: "me", text: message, image: chatImage || undefined }]);
     setChatInput("");
+    setChatImage("");
     window.setTimeout(() => {
       setChatMessages((messages) => [...messages, { from: "partner", text: "나도 오늘 정말 즐거웠어. 천천히 더 이야기해 보자 😊" }]);
     }, 700);
@@ -856,6 +891,7 @@ export default function Home() {
     setChatSeconds(3600);
     setChatEndedBy(null);
     setChatInput("");
+    setChatImage("");
     setChatMessages([{ from: "system", text: "1시간 동안 둘만의 대화가 열렸어요. 편안하게 인사를 건네보세요." }]);
     transitionTo("private-chat");
   };
@@ -1023,18 +1059,24 @@ export default function Home() {
             <p>이 정보는 게임 참가자들이 대기실과 첫인상 라운드에서 확인합니다.</p>
             <form onSubmit={saveProfile}>
               <div className="photoField">
-                <div className="profilePhotoPreview">
-                  {profilePhoto ? (
-                    // 데모에서 사용자가 방금 선택한 로컬 data URL을 즉시 미리보기 합니다.
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profilePhoto} alt="선택한 프로필 사진 미리보기" />
-                  ) : <span aria-hidden="true">{profileName.slice(0, 1) || "♥"}</span>}
+                <div className="profilePhotoGallery" aria-label={`등록한 프로필 사진 ${profilePhotos.length}장`}>
+                  {profilePhotos.map((photo, index) => (
+                    <div className={`profilePhotoItem ${index === 0 ? "primary" : ""}`} key={`${photo.slice(-24)}-${index}`}>
+                      <button type="button" onClick={() => makePrimaryProfilePhoto(index)} aria-label={`${index + 1}번 사진을 대표 사진으로 설정`}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={photo} alt={`프로필 사진 ${index + 1}${index === 0 ? ", 대표 사진" : ""}`} />
+                        {index === 0 && <b>대표</b>}
+                      </button>
+                      <button className="removePhotoButton" type="button" onClick={() => removeProfilePhoto(index)} aria-label={`${index + 1}번 프로필 사진 삭제`}>×</button>
+                    </div>
+                  ))}
+                  {Array.from({ length: 3 - profilePhotos.length }, (_, index) => <span className="emptyPhotoSlot" key={index} aria-hidden="true">＋</span>)}
                 </div>
-                <div>
-                  <label className="photoUpload" htmlFor="profile-photo">사진 선택</label>
-                  <input id="profile-photo" className="srOnly" type="file" accept="image/png,image/jpeg,image/webp" onChange={previewProfilePhoto} />
-                  <small>JPG, PNG, WEBP · 최대 5MB</small>
-                  {profilePhoto && <button className="textButton" type="button" onClick={() => setProfilePhoto("")}>사진 삭제</button>}
+                <div className="photoUploadActions">
+                  <label className="photoUpload" htmlFor="profile-photo">{profilePhotos.length ? "사진 추가" : "사진 선택"}</label>
+                  <input id="profile-photo" className="srOnly" type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={previewProfilePhoto} disabled={profilePhotos.length >= 3} />
+                  <small>최대 3장 · 사진별 5MB · 첫 번째 사진이 대표 사진입니다.</small>
+                  <span>{profilePhotos.length} / 3장</span>
                 </div>
               </div>
               <div className="profileFields">
@@ -1826,19 +1868,33 @@ export default function Home() {
             {chatMessages.map((message, index) => (
               message.from === "system"
                 ? <p className="systemMessage" key={index}>{message.text}</p>
-                : <div className={`chatBubble ${message.from === "me" ? "mine" : "partner"}`} key={index}>{message.text}</div>
+                : <div className={`chatBubble ${message.from === "me" ? "mine" : "partner"} ${message.image ? "hasImage" : ""}`} key={index}>
+                    {message.image && (
+                      // 데모에서는 선택한 로컬 이미지를 브라우저 메모리에서만 표시합니다.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={message.image} alt="채팅에 첨부한 사진" />
+                    )}
+                    {message.text && <span>{message.text}</span>}
+                  </div>
             ))}
             {chatEndedBy && <div className="chatExpired" role="status"><b>대화가 종료됐어요</b><p>상대방 화면에도 종료 메시지가 표시됩니다.</p></div>}
             {chatSeconds === 0 && !chatEndedBy && <div className="chatExpired" role="status"><b>1시간 대화가 종료됐어요</b><p>친구가 되었다면 친구창에서 500 마일리지로 다시 대화할 수 있어요.</p></div>}
           </div>
           <form className="chatComposer" onSubmit={sendChatMessage}>
+            {chatImage && <div className="chatImagePreview">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={chatImage} alt="전송 전 첨부 사진 미리보기" />
+              <button type="button" onClick={() => setChatImage("")} aria-label="첨부 사진 삭제">×</button>
+            </div>}
+            <label className={`chatAttachButton ${chatSeconds === 0 || chatEndedBy ? "disabled" : ""}`} htmlFor="chat-image" aria-label="사진 첨부">📷</label>
+            <input id="chat-image" className="srOnly" type="file" accept="image/png,image/jpeg,image/webp" onChange={previewChatImage} disabled={chatSeconds === 0 || chatEndedBy !== null} />
             <label className="srOnly" htmlFor="chat-message">메시지 입력</label>
             <input id="chat-message" value={chatInput} onChange={(event) => setChatInput(event.target.value)}
               maxLength={200} autoComplete="off" disabled={chatSeconds === 0 || chatEndedBy !== null}
               placeholder={chatEndedBy ? "종료된 대화입니다" : "편안하게 첫 인사를 건네보세요"} />
-            <button className="primaryButton" disabled={!chatInput.trim() || chatSeconds === 0 || chatEndedBy !== null} type="submit">보내기</button>
+            <button className="primaryButton" disabled={(!chatInput.trim() && !chatImage) || chatSeconds === 0 || chatEndedBy !== null} type="submit">보내기</button>
           </form>
-          <p className="chatSafety">데모 메시지는 서버로 전송되지 않으며 새로고침하면 사라집니다. 연락처나 민감한 개인정보 공유는 신중히 결정해 주세요.</p>
+          <p className="chatSafety">데모 메시지와 사진은 서버로 전송되지 않으며 새로고침하면 사라집니다. 연락처나 민감한 개인정보 공유는 신중히 결정해 주세요.</p>
         </section>
       )}
 
