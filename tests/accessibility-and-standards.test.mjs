@@ -63,6 +63,10 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /500 마일리지로 대화 신청/);
   assert.match(page, /setMileageBalance\(\(balance\) => balance - 500\)/);
   assert.match(page, /aria-label=\{`내 마일리지 \$\{mileageBalance\}`\}/);
+  assert.match(page, /useState\(600\)/);
+  assert.match(page, /가입을 마치면 시작 마일리지 600을 드리며/);
+  assert.match(page, /방을 만들려면 500 마일리지가 필요해요/);
+  assert.match(page, /500 마일리지로 방 만들기/);
   assert.match(page, /결제 정책 준비 중/);
   assert.match(page, /const demoFriendPlayers =/);
   assert.match(page, /aria-label="내 친구 3명"/);

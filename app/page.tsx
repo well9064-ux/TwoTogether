@@ -334,7 +334,7 @@ export default function Home() {
   const [chatSeconds, setChatSeconds] = useState(3600);
   const [chatEndedBy, setChatEndedBy] = useState<string | null>(null);
   const [friendStatus, setFriendStatus] = useState<"none" | "pending" | "friends">("friends");
-  const [mileageBalance, setMileageBalance] = useState(800);
+  const [mileageBalance, setMileageBalance] = useState(600);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [mileageNotice, setMileageNotice] = useState("");
   const [activeChatFriendId, setActiveChatFriendId] = useState("b1");
@@ -503,6 +503,10 @@ export default function Home() {
     const minAge = Number(roomMinAge);
     const maxAge = Number(roomMaxAge);
     if (!roomTitle.trim() || !roomMinAge || !roomMaxAge || minAge > maxAge) return;
+    if (mileageBalance < 500) {
+      setMileageNotice("방을 만들려면 500 마일리지가 필요해요.");
+      return;
+    }
     const room: RoomConfig = {
       id: "mine-room",
       title: roomTitle.trim(),
@@ -517,7 +521,9 @@ export default function Home() {
     };
     setCreatedRoom(room);
     setActiveRoom(room);
-    setAuthNotice(`‘${room.title}’ 방이 만들어졌어요. 참가자를 기다려 보세요.`);
+    setMileageBalance((balance) => balance - 500);
+    setMileageNotice("방 생성 비용 500 마일리지가 차감됐어요.");
+    setAuthNotice(`‘${room.title}’ 방이 만들어졌고 500 마일리지가 차감됐어요. 남은 마일리지는 ${mileageBalance - 500}이에요.`);
     transitionTo("lobby");
   };
 
@@ -1077,8 +1083,8 @@ export default function Home() {
           <div className="authCard signupCard">
             <p className="eyebrow">STEP 1 OF 2</p>
             <h2 id="signup-title">기본 프로필 만들기</h2>
-            <p>게임에 필요한 최소 정보만 받아요. 실명과 연락처는 프로필에 공개되지 않습니다.</p>
-            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) { setProfileName(nickname.trim()); setProfileReturn("verify"); transitionTo("profile"); } }}>
+            <p>게임에 필요한 최소 정보만 받아요. 가입을 마치면 시작 마일리지 600을 드리며, 실명과 연락처는 프로필에 공개되지 않습니다.</p>
+            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) { setMileageBalance(600); setProfileName(nickname.trim()); setProfileReturn("verify"); transitionTo("profile"); } }}>
               <label htmlFor="signup-nickname">닉네임</label>
               <input id="signup-nickname" required maxLength={12} autoComplete="nickname" value={nickname}
                 onChange={(event) => setNickname(event.target.value)} />
@@ -1207,7 +1213,7 @@ export default function Home() {
           </div>
           <div className="lobbyHeading">
             <div><p className="eyebrow">LIVE ROOMS</p><h2>참가 가능한 게임방</h2></div>
-            <button className="secondaryButton" type="button" onClick={() => transitionTo("create-room")}>＋ 새 방 만들기</button>
+            <button className="secondaryButton" type="button" onClick={() => { setMileageNotice(""); transitionTo("create-room"); }}>＋ 새 방 만들기 · 500</button>
           </div>
           <form className="roomSearchPanel" onSubmit={(event) => event.preventDefault()} aria-label="맞춤 방 검색">
             <div className="roomSearchHeading"><div><b>내 조건에 맞는 방 찾기</b><p>원하는 나이대와 지역을 선택해 보세요.</p></div><span>{filteredLobbyRooms.length}개 방</span></div>
@@ -1318,8 +1324,9 @@ export default function Home() {
               <div className="previewRule"><span>나이</span><b>{roomMinAge}–{roomMaxAge}세</b></div>
               <div className="previewRule"><span>지역</span><b>{roomRegion}</b></div>
               <div className="previewSeats">{Array.from({ length: roomCapacity }, (_, index) => <span key={index}>{index === 0 ? "♥" : "+"}</span>)}</div>
-              <p className="creatorRule">방 생성은 무료이며 본인인증 전에도 가능합니다. 실제 참가 시에는 인증이 필요해요.</p>
-              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || !roomMinAge || !roomMaxAge || Number(roomMinAge) > Number(roomMaxAge)}>이 조건으로 방 만들기</button>
+              <p className="creatorRule">방을 만들면 500 마일리지가 차감됩니다. 실제 참가 시에는 본인인증이 필요해요.</p>
+              {mileageNotice && <p className="fieldError" role="alert">{mileageNotice}</p>}
+              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || !roomMinAge || !roomMaxAge || Number(roomMinAge) > Number(roomMaxAge)}>500 마일리지로 방 만들기</button>
             </aside>
           </form>
         </section>
