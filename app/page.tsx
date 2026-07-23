@@ -288,6 +288,7 @@ export default function Home() {
   const [lobbyPage, setLobbyPage] = useState(1);
   const [kickCandidateId, setKickCandidateId] = useState<string | null>(null);
   const [kickVoteCount, setKickVoteCount] = useState(0);
+  const [kickVotePassed, setKickVotePassed] = useState(false);
   const [kickedProfileIds, setKickedProfileIds] = useState<string[]>([]);
   const [photoViewerId, setPhotoViewerId] = useState<string | null>(null);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
@@ -413,6 +414,7 @@ export default function Home() {
   const visibleLobbyRooms = filteredLobbyRooms.slice((lobbyPage - 1) * 9, lobbyPage * 9);
   const kickCandidate = demoWaitingProfiles.find((person) => person.id === kickCandidateId);
   const kickVoteThreshold = Math.floor(activeRoom.people / 2) + 1;
+  const kickVoters = visibleWaitingProfiles.filter((person) => person.id !== kickCandidateId).slice(0, Math.max(1, activeRoom.people - 1));
   const photoViewerPerson = demoWaitingProfiles.find((person) => person.id === photoViewerId);
   const hasUnlockedExtraPhotos = Boolean(photoViewerId && unlockedPhotoIds.includes(photoViewerId));
 
@@ -432,16 +434,22 @@ export default function Home() {
   const startKickVote = (profileId: string) => {
     setKickCandidateId(profileId);
     setKickVoteCount(2);
+    setKickVotePassed(false);
   };
 
   const addDemoKickVote = () => {
     const nextVotes = kickVoteCount + 1;
     setKickVoteCount(nextVotes);
     if (kickCandidateId && nextVotes >= kickVoteThreshold) {
-      setKickedProfileIds((previous) => [...previous, kickCandidateId]);
-      setKickCandidateId(null);
-      setKickVoteCount(0);
+      setKickedProfileIds((previous) => previous.includes(kickCandidateId) ? previous : [...previous, kickCandidateId]);
+      setKickVotePassed(true);
     }
+  };
+
+  const closeKickVote = () => {
+    setKickCandidateId(null);
+    setKickVoteCount(0);
+    setKickVotePassed(false);
   };
 
   const openProfilePhotos = (profileId: string) => {
@@ -1392,14 +1400,30 @@ export default function Home() {
             {lastReaction && <p className="reactionNotice" role="status"><span>{lastReaction.emoji}</span> {profileName}님이 ‘{lastReaction.label}’ 표정을 보냈어요.</p>}
           </section>
           {kickCandidate && (
-            <section className="kickVotePanel" aria-labelledby="kick-vote-title">
-              <div><span aria-hidden="true">🗳️</span><div><b id="kick-vote-title">{kickCandidate.name}님 강퇴 투표</b><p>과반수 찬성 시 대기방에서 퇴장합니다. 악의적인 투표는 운영 정책에 따라 제한될 수 있어요.</p></div></div>
-              <div className="kickVoteProgress" role="progressbar" aria-label="강퇴 찬성표" aria-valuemin={0} aria-valuemax={kickVoteThreshold} aria-valuenow={Math.min(kickVoteCount, kickVoteThreshold)}>
-                <span style={{ width: `${Math.min(100, (kickVoteCount / kickVoteThreshold) * 100)}%` }} />
-              </div>
-              <p><b>{kickVoteCount}</b> / {kickVoteThreshold}표 · 과반수까지 {Math.max(0, kickVoteThreshold - kickVoteCount)}표 남음</p>
-              <div><button className="secondaryButton" type="button" onClick={() => { setKickCandidateId(null); setKickVoteCount(0); }}>투표 취소</button><button className="primaryButton" type="button" onClick={addDemoKickVote}>데모 찬성표 받기</button></div>
-            </section>
+            <div className="kickVoteBackdrop">
+              <section className="kickVotePanel" role="dialog" aria-modal="true" aria-labelledby="kick-vote-title">
+                <button className="kickVoteClose" type="button" onClick={closeKickVote} aria-label="강퇴 투표창 닫기">×</button>
+                <div><span aria-hidden="true">🗳️</span><div><b id="kick-vote-title">{kickCandidate.name}님 강퇴 투표</b><p>다른 참가자들의 투표 상태를 실시간으로 확인할 수 있어요.</p></div></div>
+                <div className="kickVoterList" aria-label="참가자별 강퇴 투표 현황">
+                  {kickVoters.map((voter, index) => {
+                    const voted = index < kickVoteCount;
+                    return <div className={voted ? "voted" : "waiting"} key={voter.id}>
+                      <span style={{ background: voter.color }}>{voter.avatar}</span>
+                      <p><b>{voter.isMe ? `${voter.name} (나)` : voter.name}</b><small>{voted ? "찬성표를 보냈어요" : "투표를 기다리는 중"}</small></p>
+                      <em>{voted ? "찬성 ✓" : "대기 ···"}</em>
+                    </div>;
+                  })}
+                </div>
+                <div className="kickVoteProgress" role="progressbar" aria-label="강퇴 찬성표" aria-valuemin={0} aria-valuemax={kickVoteThreshold} aria-valuenow={Math.min(kickVoteCount, kickVoteThreshold)}>
+                  <span style={{ width: `${Math.min(100, (kickVoteCount / kickVoteThreshold) * 100)}%` }} />
+                </div>
+                <p><b>{Math.min(kickVoteCount, kickVoteThreshold)}</b> / {kickVoteThreshold}표 · {kickVotePassed ? "과반수 찬성 완료" : `과반수까지 ${Math.max(0, kickVoteThreshold - kickVoteCount)}표 남음`}</p>
+                {kickVotePassed
+                  ? <div className="kickVoteResult" role="status"><span>✓</span><p><b>강퇴 투표가 통과됐어요.</b><small>{kickCandidate.name}님이 대기방에서 퇴장 처리되었습니다.</small></p></div>
+                  : <p className="kickVoteRule">악의적인 반복 투표는 운영 정책에 따라 제한될 수 있습니다.</p>}
+                <div>{!kickVotePassed && <button className="secondaryButton" type="button" onClick={closeKickVote}>투표 취소</button>}<button className="primaryButton" type="button" onClick={kickVotePassed ? closeKickVote : addDemoKickVote}>{kickVotePassed ? "확인" : "다른 참가자 찬성표 받기"}</button></div>
+              </section>
+            </div>
           )}
           <div className="waitingFooter">
             <div><b>게임 구성</b><p>사랑의 작대기 + 랜덤 미니게임 3개 + 최종 선택 · 약 25분</p></div>

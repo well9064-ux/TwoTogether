@@ -167,6 +167,11 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /profileReadyState/);
   assert.match(page, /강퇴 투표/);
   assert.match(page, /kickVoteThreshold/);
+  assert.match(page, /className="kickVoteBackdrop"/);
+  assert.match(page, /참가자별 강퇴 투표 현황/);
+  assert.match(page, /찬성표를 보냈어요/);
+  assert.match(page, /강퇴 투표가 통과됐어요/);
+  assert.match(page, /const \[kickVotePassed, setKickVotePassed\]/);
   assert.match(page, /openProfilePhotos\(person\.id\)/);
   assert.match(page, /200 마일리지로 열기/);
   assert.match(page, /setMileageBalance\(\(balance\) => balance - 200\)/);
