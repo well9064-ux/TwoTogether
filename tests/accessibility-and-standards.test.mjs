@@ -40,6 +40,12 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /aria-label="대기 중인 메뉴판"/);
   assert.match(page, /role="status"><span>✓<\/span><b>주문 통과!/);
   assert.match(page, /currentOrder\.sides\.includes\(side\)/);
+  assert.match(page, /\| "final-result"/);
+  assert.match(page, /title: "우리의 피날레"/);
+  assert.match(page, /const finalRanking =/);
+  assert.match(page, /aria-label="최종 커플 순위"/);
+  assert.match(page, /각자 <b>\{mileage\} 마일리지/);
+  assert.match(page, /최종 결과 보기/);
   assert.match(page, /disabled=\{!drawerAnswer\.trim\(\)\}/);
   assert.match(page, /disabled=\{!textHint\.trim\(\)\}/);
   assert.doesNotMatch(page, /question\.answer/);

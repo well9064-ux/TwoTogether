@@ -18,7 +18,8 @@ type Screen =
   | "landing" | "signal" | "match-result"
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
   | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
-  | "burger-intro" | "burger-play" | "burger-result";
+  | "burger-intro" | "burger-play" | "burger-result"
+  | "final-result";
 
 type Ingredient = "bun" | "patty" | "cheese" | "lettuce" | "tomato";
 type SideItem = "coffee" | "cola" | "cider" | "fries" | "applePie" | "nugget" | "squidRing";
@@ -134,7 +135,7 @@ const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "버거 팀워크
 
 type MusicTheme = { title: string; melody: number[]; chords: number[][]; tempo: number };
 
-const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour", MusicTheme> = {
+const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour" | "roundFive", MusicTheme> = {
   roundOne: {
     title: "첫눈에",
     melody: [587.33, 659.25, 739.99, 880, 830.61, 739.99, 659.25, 587.33, 554.37, 659.25, 739.99, 987.77, 880, 830.61, 739.99, 659.25],
@@ -178,6 +179,17 @@ const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour", 
       [246.94, 311.13, 369.99],
     ],
     tempo: 280,
+  },
+  roundFive: {
+    title: "우리의 피날레",
+    melody: [523.25, 659.25, 783.99, 1046.5, 987.77, 880, 783.99, 659.25, 587.33, 739.99, 880, 1174.66, 1046.5, 987.77, 880, 783.99],
+    chords: [
+      [261.63, 329.63, 392],
+      [293.66, 369.99, 440],
+      [329.63, 415.3, 493.88],
+      [246.94, 311.13, 369.99],
+    ],
+    tempo: 340,
   },
 };
 
@@ -237,7 +249,15 @@ export default function Home() {
   const sidesReady = Boolean(currentOrder && preparedSides.length === currentOrder.sides.length);
   const burgerPlayer = demoCouple[burgerRoleIndex];
   const sidePlayer = demoCouple[(burgerRoleIndex + 1) % 2];
-  const musicRound: keyof typeof musicThemes = screen.startsWith("burger-")
+  const demoFinalScore = 55 + score * 5 + compatScore * 5 + Math.min(burgerScore, 5) * 4;
+  const finalRanking = [
+    { couple: demoCouple, score: demoFinalScore, isOurs: true },
+    { couple: [players[0], players[4]] as const, score: 92, isOurs: false },
+    { couple: [players[2], players[5]] as const, score: 78, isOurs: false },
+  ].sort((left, right) => right.score - left.score);
+  const musicRound: keyof typeof musicThemes = screen === "final-result"
+    ? "roundFive"
+    : screen.startsWith("burger-")
     ? "roundFour"
     : screen.startsWith("compat-") ? "roundThree"
     : screen === "landing" || screen === "signal" || screen === "match-result"
@@ -966,9 +986,48 @@ export default function Home() {
           </div>
           <div className="resultActions">
             <button className="secondaryButton" onClick={startBurgerRound}>다시 도전하기</button>
-            <button className="primaryButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
+            <button className="primaryButton" onClick={() => transitionTo("final-result")}>최종 결과 보기 <span>→</span></button>
           </div>
           <p className="privacyNote">정식 멀티플레이에서는 두 사람이 각자의 화면에서 동시에 역할을 수행합니다.</p>
+        </section>
+      )}
+
+      {screen === "final-result" && (
+        <section className="finalRankingScreen">
+          <div className="finalTitle">
+            <p className="eyebrow">FINAL · COUPLE RANKING</p>
+            <h2>오늘 가장 빛난<br /><em>세 커플을 소개합니다</em></h2>
+            <p>첫인상부터 팀워크까지, 함께 만든 모든 순간을 합산했어요.</p>
+          </div>
+          <div className="podium" aria-label="최종 커플 순위">
+            {finalRanking.map((entry, index) => {
+              const mileage = [300, 200, 100][index];
+              return (
+                <article className={`podiumCard rank${index + 1} ${entry.isOurs ? "ourCouple" : ""}`} key={`${entry.couple[0].id}-${entry.couple[1].id}`}>
+                  <div className="rankBadge"><span>{index + 1}</span><small>{index === 0 ? "WINNER" : "PLACE"}</small></div>
+                  <div className="rankingCouple">
+                    <div><span style={{ background: entry.couple[0].color }}>{entry.couple[0].avatar}</span><b>{entry.couple[0].name}</b></div>
+                    <i>♥</i>
+                    <div><span style={{ background: entry.couple[1].color }}>{entry.couple[1].avatar}</span><b>{entry.couple[1].name}</b></div>
+                  </div>
+                  <strong>{entry.score}<small>점</small></strong>
+                  <div className="mileageReward"><span>✦</span><p>각자 <b>{mileage} 마일리지</b><small>꾸미기 아이템에 사용할 수 있어요</small></p></div>
+                  {entry.isOurs && <em className="ourBadge">우리 커플</em>}
+                </article>
+              );
+            })}
+          </div>
+          <div className="scoreBreakdown">
+            <div><span>01</span><p>첫인상 매칭<b>기본 55점</b></p></div>
+            <div><span>02</span><p>취향 퀴즈<b>{score} / {quizQuestions.length}</b></p></div>
+            <div><span>03</span><p>상황 궁합<b>{compatScore} / {compatibilityQuestions.length}</b></p></div>
+            <div><span>04</span><p>팀워크 주문<b>{burgerScore}개</b></p></div>
+          </div>
+          <p className="nextRoundNotice">다음 단계에서는 서로의 최종 호감을 확인하고, 마음이 통하면 1:1 대화를 시작할 수 있어요.</p>
+          <div className="resultActions">
+            <button className="secondaryButton" onClick={() => transitionTo("burger-intro")}>팀워크 다시 하기</button>
+            <button className="primaryButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
+          </div>
         </section>
       )}
       </main>
