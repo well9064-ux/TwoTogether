@@ -162,7 +162,8 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /const waitingReactions =/);
   assert.match(page, /profileReactionBubble/);
   assert.match(css, /\.profileReactionBubble\s*\{[^}]*right:\s*-12px/);
-  assert.match(css, /\.profileReactionBubble::after\s*\{[^}]*clip-path:\s*polygon\(0 0, 100% 0, 0 100%\)/);
+  assert.match(css, /\.profileReactionBubble\s*\{[^}]*border-radius:\s*50% 50% 50% 8px/);
+  assert.doesNotMatch(css, /\.profileReactionBubble::after/);
   assert.match(page, /내 조건에 맞는 방 찾기/);
   assert.match(page, /filteredLobbyRooms\.slice/);
   assert.match(page, /aria-label="게임방 목록 페이지"/);
