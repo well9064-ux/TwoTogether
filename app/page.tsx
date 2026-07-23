@@ -58,9 +58,12 @@ export default function Home() {
   const [drawingImage, setDrawingImage] = useState("");
   const [musicStarted, setMusicStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
+  const [volume, setVolume] = useState(60);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const transitionTimerRef = useRef<number | null>(null);
 
   const current = players[currentIndex];
   const candidates = players.filter((player) => player.team !== current.team);
@@ -103,7 +106,7 @@ export default function Home() {
       oscillator.type = "sine";
       oscillator.frequency.value = notes[index % notes.length];
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.035, now + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.07 * (volume / 100), now + 0.04);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
       oscillator.connect(gain);
       gain.connect(context.destination);
@@ -115,7 +118,40 @@ export default function Home() {
     playNote();
     const timer = window.setInterval(playNote, 680);
     return () => window.clearInterval(timer);
-  }, [musicRound, musicStarted, isMuted]);
+  }, [musicRound, musicStarted, isMuted, volume]);
+
+  useEffect(() => () => {
+    if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
+    void audioContextRef.current?.close();
+  }, []);
+
+  const transitionTo = (nextScreen: Screen) => {
+    if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
+    setIsTransitioning(true);
+    transitionTimerRef.current = window.setTimeout(() => {
+      setScreen(nextScreen);
+      setIsTransitioning(false);
+      transitionTimerRef.current = null;
+    }, 520);
+  };
+
+  useEffect(() => {
+    if (screen !== "draw") return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    canvas.width = canvas.clientWidth * 2;
+    canvas.height = canvas.clientHeight * 2;
+    const context = canvas.getContext("2d");
+    if (context) {
+      context.scale(2, 2);
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.lineWidth = 5;
+      context.strokeStyle = "#231f2d";
+      context.fillStyle = "#fffdf8";
+      context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    }
+  }, [screen]);
 
   const resetAll = () => {
     setCurrentIndex(0);
@@ -127,32 +163,16 @@ export default function Home() {
     setTextHint("");
     setDrawingImage("");
     ensureMusic();
-    setScreen("signal");
+    transitionTo("signal");
   };
 
   const confirmChoice = () => {
     if (currentIndex < players.length - 1) setCurrentIndex((index) => index + 1);
-    else setScreen("match-result");
+    else transitionTo("match-result");
   };
 
   const prepareCanvas = () => {
-    setScreen("draw");
-    requestAnimationFrame(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = canvas.clientWidth * 2;
-      canvas.height = canvas.clientHeight * 2;
-      const context = canvas.getContext("2d");
-      if (context) {
-        context.scale(2, 2);
-        context.lineCap = "round";
-        context.lineJoin = "round";
-        context.lineWidth = 5;
-        context.strokeStyle = "#231f2d";
-        context.fillStyle = "#fffdf8";
-        context.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
-      }
-    });
+    transitionTo("draw");
   };
 
   const position = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -193,19 +213,19 @@ export default function Home() {
       setSelectedAnswer("");
       setTextHint("");
       setDrawingImage("");
-      if (quizIndex === quizQuestions.length - 1) setScreen("quiz-result");
-    else {
-      setQuizIndex((index) => index + 1);
-      setScreen("quiz-intro");
-    }
+      if (quizIndex === quizQuestions.length - 1) transitionTo("quiz-result");
+      else {
+        setQuizIndex((index) => index + 1);
+        transitionTo("quiz-intro");
+      }
   };
 
   return (
     <>
       <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
-      <main id="main-content">
+      <main id="main-content" aria-busy={isTransitioning}>
       <header className="topbar">
-        <button className="brand" onClick={() => setScreen("landing")} aria-label="처음 화면으로">
+        <button className="brand" onClick={() => transitionTo("landing")} aria-label="처음 화면으로">
           <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
         <div className="topbarActions">
@@ -218,8 +238,26 @@ export default function Home() {
             <span aria-hidden="true">{musicStarted && !isMuted ? "♪" : "♩"}</span>
             {!musicStarted ? "음악 켜기" : isMuted ? "음악 재생" : "음소거"}
           </button>
+          <div className="volumeControl" role="group" aria-label="배경음 볼륨">
+            <button type="button" onClick={() => setVolume((level) => Math.max(10, level - 10))}
+              disabled={volume <= 10} aria-label="볼륨 줄이기">−</button>
+            <span aria-live="polite" aria-label={`현재 볼륨 ${volume}%`}>{volume}%</span>
+            <button type="button" onClick={() => setVolume((level) => Math.min(100, level + 10))}
+              disabled={volume >= 100} aria-label="볼륨 키우기">＋</button>
+          </div>
         </div>
       </header>
+
+      {isTransitioning && (
+        <div className="loadingOverlay" role="status" aria-live="polite">
+          <div className="walkingScene" aria-hidden="true">
+            <span className="walker man">🚶‍♂️</span><span className="floatingHeart">♥</span><span className="walker woman">🚶‍♀️</span>
+            <i className="walkingRoad" />
+          </div>
+          <b>둘만의 다음 장면으로 걸어가는 중…</b>
+          <small>잠시만 기다려 주세요</small>
+        </div>
+      )}
 
       {screen === "landing" && (
         <section className="landing">
@@ -303,7 +341,7 @@ export default function Home() {
           </div>
           <div className="resultActions">
             <button className="secondaryButton" onClick={resetAll}>다시 선택하기</button>
-            <button className="primaryButton" onClick={() => setScreen("quiz-intro")}>취향 퀴즈로 <span>→</span></button>
+            <button className="primaryButton" onClick={() => transitionTo("quiz-intro")}>취향 퀴즈로 <span>→</span></button>
           </div>
         </section>
       )}
@@ -354,7 +392,7 @@ export default function Home() {
           <button className="primaryButton centerButton" onClick={() => {
             const canvas = canvasRef.current;
             if (canvas) setDrawingImage(canvas.toDataURL("image/png"));
-            setScreen("guess");
+            transitionTo("guess");
           }}>그림 완성 · 정답 맞히기 <span>→</span></button>
         </section>
       )}
@@ -401,8 +439,8 @@ export default function Home() {
           </div>
           <p className="resultMessage">{score >= 4 ? "말하지 않아도 통하는 환상의 호흡이에요!" : score >= 2 ? "서로의 취향을 알아가는 좋은 시작이에요." : "다른 취향만큼 알아갈 이야기도 많겠네요!"}</p>
           <div className="resultActions">
-            <button className="secondaryButton" onClick={() => { setQuizIndex(0); setScore(0); setAnswers([]); setScreen("quiz-intro"); }}>퀴즈 다시 하기</button>
-            <button className="primaryButton" onClick={() => setScreen("landing")}>처음으로 <span>→</span></button>
+            <button className="secondaryButton" onClick={() => { setQuizIndex(0); setScore(0); setAnswers([]); transitionTo("quiz-intro"); }}>퀴즈 다시 하기</button>
+            <button className="primaryButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
           </div>
           <p className="privacyNote">실제 온라인 버전에서는 모든 커플이 동시에 플레이하고 점수 순위가 집계됩니다.</p>
         </section>

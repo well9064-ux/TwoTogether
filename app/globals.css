@@ -83,6 +83,20 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visi
 .topbarActions { display: flex; align-items: center; gap: 10px; }
 .soundButton { min-height: 40px; display: flex; align-items: center; gap: 7px; padding: 8px 12px; color: var(--ink); background: #201b2a; border: 1px solid var(--line); border-radius: 99px; cursor: pointer; }
 .soundButton span { color: #ff83a8; font-size: 18px; }
+.volumeControl { min-height: 40px; display: flex; align-items: center; overflow: hidden; color: var(--ink); background: #201b2a; border: 1px solid var(--line); border-radius: 99px; }
+.volumeControl button { width: 36px; align-self: stretch; color: white; background: transparent; border: 0; cursor: pointer; font-size: 18px; }
+.volumeControl button:hover:not(:disabled) { background: rgba(255,255,255,.08); }
+.volumeControl button:disabled { color: #5d5668; cursor: not-allowed; }
+.volumeControl span { min-width: 45px; color: var(--muted); text-align: center; font-size: 11px; }
+.loadingOverlay { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; background: rgba(13,11,19,.94); backdrop-filter: blur(8px); }
+.loadingOverlay small { color: var(--muted); }
+.walkingScene { position: relative; width: 230px; height: 100px; margin-bottom: 15px; overflow: hidden; }
+.walker { position: absolute; bottom: 24px; font-size: 45px; filter: drop-shadow(0 10px 8px rgba(0,0,0,.25)); animation: cuteWalk .7s ease-in-out infinite alternate; }
+.walker.man { left: 50px; }.walker.woman { right: 50px; animation-delay: -.35s; }
+.floatingHeart { position: absolute; top: 13px; left: 50%; color: var(--pink); font-size: 24px; transform: translateX(-50%); animation: heartFloat 1s ease-in-out infinite; }
+.walkingRoad { position: absolute; left: 20px; right: 20px; bottom: 18px; height: 2px; background: linear-gradient(90deg, transparent, #6c6279, transparent); }
+@keyframes cuteWalk { to { transform: translateY(-7px) rotate(2deg); } }
+@keyframes heartFloat { 50% { transform: translate(-50%, -8px) scale(1.12); } }
 
 .landing {
   width: min(1180px, calc(100% - 48px));
@@ -230,6 +244,9 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .portrait { height: 150px; }
   .prototypeBadge { display: none; }
   .soundButton { min-width: 44px; }
+  .soundButton { font-size: 0; }
+  .soundButton span { font-size: 18px; }
+  .volumeControl span { min-width: 38px; }
   .guessLayout { grid-template-columns: 1fr; }
   .drawCanvas { height: 360px; }
   .mirrorCanvas { height: 280px; }
