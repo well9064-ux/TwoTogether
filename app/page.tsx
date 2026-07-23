@@ -29,11 +29,11 @@ const players: Player[] = [
 ];
 
 const quizQuestions = [
-  { prompt: "내가 가장 좋아하는 음식은?", answer: "떡볶이", options: ["떡볶이", "초밥", "파스타", "삼겹살"] },
-  { prompt: "함께 가고 싶은 여행지는?", answer: "제주도", options: ["제주도", "파리", "뉴욕", "삿포로"] },
-  { prompt: "쉬는 날 가장 하고 싶은 것은?", answer: "늦잠", options: ["늦잠", "등산", "쇼핑", "드라이브"] },
-  { prompt: "내가 좋아하는 계절은?", answer: "가을", options: ["봄", "여름", "가을", "겨울"] },
-  { prompt: "첫 데이트로 가장 좋은 장소는?", answer: "놀이공원", options: ["영화관", "놀이공원", "미술관", "한강"] },
+  { prompt: "내가 가장 좋아하는 음식은?", suggestions: ["떡볶이", "초밥", "파스타", "삼겹살", "치킨", "마라탕"] },
+  { prompt: "함께 가고 싶은 여행지는?", suggestions: ["제주도", "파리", "뉴욕", "삿포로", "다낭", "부산"] },
+  { prompt: "쉬는 날 가장 하고 싶은 것은?", suggestions: ["늦잠", "등산", "쇼핑", "드라이브", "게임", "영화 보기"] },
+  { prompt: "내가 좋아하는 계절은?", suggestions: ["봄", "여름", "가을", "겨울", "장마철", "첫눈 오는 날"] },
+  { prompt: "첫 데이트로 가장 좋은 장소는?", suggestions: ["영화관", "놀이공원", "미술관", "한강", "아쿠아리움", "맛집"] },
 ];
 
 const compatibilityQuestions = [
@@ -136,6 +136,8 @@ export default function Home() {
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState("");
+  const [drawerAnswer, setDrawerAnswer] = useState("");
+  const [choiceOptions, setChoiceOptions] = useState<string[]>([]);
   const [textHint, setTextHint] = useState("");
   const [drawingImage, setDrawingImage] = useState("");
   const [compatIndex, setCompatIndex] = useState(0);
@@ -274,6 +276,8 @@ export default function Home() {
     setScore(0);
     setAnswers([]);
     setSelectedAnswer("");
+    setDrawerAnswer("");
+    setChoiceOptions([]);
     setTextHint("");
     setDrawingImage("");
     setCompatIndex(0);
@@ -291,6 +295,14 @@ export default function Home() {
   };
 
   const prepareCanvas = () => {
+    const answer = drawerAnswer.trim();
+    if (!answer) return;
+    const distractors = question.suggestions
+      .filter((option) => option.toLocaleLowerCase("ko") !== answer.toLocaleLowerCase("ko"))
+      .slice(0, 3);
+    const options = [...distractors];
+    options.splice((quizIndex * 3 + answer.length) % 4, 0, answer);
+    setChoiceOptions(options);
     transitionTo("draw");
   };
 
@@ -326,10 +338,12 @@ export default function Home() {
 
   const submitGuess = () => {
     if (!selectedAnswer) return;
-    const correct = selectedAnswer === question.answer;
+    const correct = selectedAnswer === drawerAnswer.trim();
     setAnswers((previous) => [...previous, correct]);
     if (correct) setScore((previous) => previous + 1);
       setSelectedAnswer("");
+      setDrawerAnswer("");
+      setChoiceOptions([]);
       setTextHint("");
       setDrawingImage("");
       if (quizIndex === quizQuestions.length - 1) transitionTo("quiz-result");
@@ -508,10 +522,19 @@ export default function Home() {
           <div className="questionReveal">
             <small>그리는 사람만 확인하세요</small>
             <h3>{question.prompt}</h3>
-            <p>정답 <b>{question.answer}</b></p>
+            <label htmlFor="drawer-answer">나의 정답을 직접 입력하세요</label>
+            <input
+              id="drawer-answer"
+              value={drawerAnswer}
+              onChange={(event) => setDrawerAnswer(event.target.value)}
+              maxLength={20}
+              autoComplete="off"
+              placeholder="예: 김치찌개"
+            />
+            <small className="inputGuide">입력한 답은 맞히는 사람에게 공개되지 않아요.</small>
           </div>
-          <p className="passDevice">정답을 확인했다면 상대방에게 화면이 보이지 않게 하고 그림을 그려주세요.</p>
-          <button className="primaryButton centerButton" onClick={prepareCanvas}>그림 그리기 시작 <span>→</span></button>
+          <p className="passDevice">정답을 입력했다면 상대방에게 화면이 보이지 않게 하고 그림과 힌트를 준비해 주세요.</p>
+          <button className="primaryButton centerButton" disabled={!drawerAnswer.trim()} onClick={prepareCanvas}>그림 그리기 시작 <span>→</span></button>
         </section>
       )}
 
@@ -531,17 +554,17 @@ export default function Home() {
             이 브라우저는 그림판을 지원하지 않습니다. 아래의 글 힌트 입력란을 이용해 주세요.
           </canvas>
           <div className="accessibleHint">
-            <label htmlFor="text-hint">그림을 사용하기 어려우면 글로 힌트 설명하기</label>
-            <p id="drawing-help">키보드나 화면 읽기 프로그램 이용자는 정답 단어를 제외한 설명을 입력할 수 있습니다.</p>
+            <label htmlFor="text-hint">상대방에게 보여줄 힌트</label>
+            <p id="drawing-help">정답 단어를 직접 쓰지 않고 특징을 설명해 주세요. 키보드나 화면 읽기 프로그램 이용자는 그림 대신 자세한 글 힌트를 사용할 수 있습니다.</p>
             <textarea id="text-hint" value={textHint} onChange={(event) => setTextHint(event.target.value)}
-              maxLength={100} placeholder="예: 맵고 빨간색이며 분식집에서 자주 먹어요" />
+              maxLength={100} placeholder="예: 얼큰하고 따뜻하며 밥과 함께 먹어요" />
             <small>{textHint.length} / 100자</small>
           </div>
-          <button className="primaryButton centerButton" onClick={() => {
+          <button className="primaryButton centerButton" disabled={!textHint.trim()} onClick={() => {
             const canvas = canvasRef.current;
             if (canvas) setDrawingImage(canvas.toDataURL("image/png"));
             transitionTo("guess");
-          }}>그림 완성 · 정답 맞히기 <span>→</span></button>
+          }}>그림과 힌트 완성 · 화면 넘기기 <span>→</span></button>
         </section>
       )}
 
@@ -564,7 +587,7 @@ export default function Home() {
             <div className="answerPanel">
               <p>하나를 선택하세요</p>
               <div className="answerGrid">
-                {question.options.map((option, index) => (
+                {choiceOptions.map((option, index) => (
                   <button key={option} className={selectedAnswer === option ? "chosen" : ""}
                     onClick={() => setSelectedAnswer(option)} aria-pressed={selectedAnswer === option}>
                     <span>{index + 1}</span>{option}
@@ -587,7 +610,7 @@ export default function Home() {
           </div>
           <p className="resultMessage">{score >= 4 ? "말하지 않아도 통하는 환상의 호흡이에요!" : score >= 2 ? "서로의 취향을 알아가는 좋은 시작이에요." : "다른 취향만큼 알아갈 이야기도 많겠네요!"}</p>
           <div className="resultActions">
-            <button className="secondaryButton" onClick={() => { setQuizIndex(0); setScore(0); setAnswers([]); transitionTo("quiz-intro"); }}>퀴즈 다시 하기</button>
+            <button className="secondaryButton" onClick={() => { setQuizIndex(0); setScore(0); setAnswers([]); setDrawerAnswer(""); setChoiceOptions([]); transitionTo("quiz-intro"); }}>퀴즈 다시 하기</button>
             <button className="primaryButton" onClick={startCompatibility}>상황 궁합으로 <span>→</span></button>
           </div>
           <p className="privacyNote">실제 온라인 버전에서는 모든 커플이 동시에 플레이하고 점수 순위가 집계됩니다.</p>
