@@ -243,8 +243,8 @@ export default function Home() {
   const [profileReturn, setProfileReturn] = useState<"verify" | "lobby">("verify");
   const [isReady, setIsReady] = useState(false);
   const [roomTitle, setRoomTitle] = useState("");
-  const [roomMinAge, setRoomMinAge] = useState(25);
-  const [roomMaxAge, setRoomMaxAge] = useState(35);
+  const [roomMinAge, setRoomMinAge] = useState("25");
+  const [roomMaxAge, setRoomMaxAge] = useState("35");
   const [roomRegion, setRoomRegion] = useState("모든 지역");
   const [roomCapacity, setRoomCapacity] = useState<4 | 6>(6);
   const [createdRoom, setCreatedRoom] = useState<RoomConfig | null>(null);
@@ -383,7 +383,9 @@ export default function Home() {
 
   const createRoom = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!roomTitle.trim() || roomMinAge > roomMaxAge) return;
+    const minAge = Number(roomMinAge);
+    const maxAge = Number(roomMaxAge);
+    if (!roomTitle.trim() || !roomMinAge || !roomMaxAge || minAge > maxAge) return;
     const room: RoomConfig = {
       id: "mine-room",
       title: roomTitle.trim(),
@@ -391,8 +393,8 @@ export default function Home() {
       capacity: roomCapacity,
       tag: "내가 만든 방",
       time: roomCapacity === 4 ? "약 20분" : "약 25분",
-      minAge: roomMinAge,
-      maxAge: roomMaxAge,
+      minAge,
+      maxAge,
       region: roomRegion,
       isMine: true,
     };
@@ -1091,12 +1093,12 @@ export default function Home() {
               <div className="formSection">
                 <span className="formStep">03</span><div><label>참가 나이</label><p>설정한 나이 범위의 사용자만 입장할 수 있어요.</p></div>
                 <div className="ageRange">
-                  <label htmlFor="room-min-age">최소 나이<input id="room-min-age" type="number" min={19} max={60} value={roomMinAge} onChange={(event) => setRoomMinAge(Number(event.target.value))} /></label>
+                  <label htmlFor="room-min-age">최소 나이<input id="room-min-age" type="number" min={19} max={60} value={roomMinAge} onChange={(event) => setRoomMinAge(event.target.value.replace(/^0+(?=\d)/, ""))} /></label>
                   <span>부터</span>
-                  <label htmlFor="room-max-age">최대 나이<input id="room-max-age" type="number" min={19} max={60} value={roomMaxAge} onChange={(event) => setRoomMaxAge(Number(event.target.value))} /></label>
+                  <label htmlFor="room-max-age">최대 나이<input id="room-max-age" type="number" min={19} max={60} value={roomMaxAge} onChange={(event) => setRoomMaxAge(event.target.value.replace(/^0+(?=\d)/, ""))} /></label>
                   <span>까지</span>
                 </div>
-                {roomMinAge > roomMaxAge && <p className="fieldError" role="alert">최대 나이는 최소 나이보다 높아야 합니다.</p>}
+                {roomMinAge && roomMaxAge && Number(roomMinAge) > Number(roomMaxAge) && <p className="fieldError" role="alert">최대 나이는 최소 나이보다 높아야 합니다.</p>}
               </div>
               <div className="formSection">
                 <span className="formStep">04</span><div><label htmlFor="room-region">참가 지역</label><p>모든 지역을 허용하거나 하나의 지역을 선택하세요.</p></div>
@@ -1112,7 +1114,7 @@ export default function Home() {
               <div className="previewRule"><span>지역</span><b>{roomRegion}</b></div>
               <div className="previewSeats">{Array.from({ length: roomCapacity }, (_, index) => <span key={index}>{index === 0 ? "♥" : "+"}</span>)}</div>
               <p className="creatorRule">방 생성은 무료이며 본인인증 전에도 가능합니다. 실제 참가 시에는 인증이 필요해요.</p>
-              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || roomMinAge > roomMaxAge}>이 조건으로 방 만들기</button>
+              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || !roomMinAge || !roomMaxAge || Number(roomMinAge) > Number(roomMaxAge)}>이 조건으로 방 만들기</button>
             </aside>
           </form>
         </section>

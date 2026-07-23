@@ -128,6 +128,7 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /id="room-title"/);
   assert.match(page, /id="room-min-age"/);
   assert.match(page, /id="room-max-age"/);
+  assert.match(page, /event\.target\.value\.replace\(\/\^0\+\(\?=\\d\)\/, ""\)/);
   assert.match(page, /id="room-region"/);
   assert.match(page, /role="radiogroup" aria-label="참여 인원"/);
   assert.match(page, /남녀 비율은 언제나 1:1로 유지됩니다/);
