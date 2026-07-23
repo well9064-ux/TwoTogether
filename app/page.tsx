@@ -1017,10 +1017,10 @@ export default function Home() {
                 <i>나</i>
               </div>
               <div className="waitingProfileBody">
-                <div><h2>{profileName}</h2><b>{profileAge}세</b></div>
-                <p>{profileRegion} · {profileJob}</p>
-                <blockquote>“{profileIntro}”</blockquote>
-                <em>본인인증 완료 ✓</em>
+                <div className="profileIdentity"><h2>{profileName}</h2><b>{profileAge}세</b></div>
+                <dl className="profileFacts"><div><dt>지역</dt><dd>{profileRegion}</dd></div><div><dt>직업</dt><dd>{profileJob}</dd></div></dl>
+                <blockquote className="profileIntro">“{profileIntro}”</blockquote>
+                <em className="verifyBadge">본인인증 완료 ✓</em>
               </div>
             </article>
             {[players[3], players[1], players[4]].map((player, index) => (
@@ -1029,10 +1029,10 @@ export default function Home() {
                   <span>{player.avatar}</span><i>{index % 2 === 0 ? "여" : "남"}</i>
                 </div>
                 <div className="waitingProfileBody">
-                  <div><h2>{player.name}</h2><b>{player.age}세</b></div>
-                  <p>{index === 1 ? "경기" : "서울"} · {player.job}</p>
-                  <blockquote>“{player.intro}”</blockquote>
-                  <em>본인인증 완료 ✓</em>
+                  <div className="profileIdentity"><h2>{player.name}</h2><b>{player.age}세</b></div>
+                  <dl className="profileFacts"><div><dt>지역</dt><dd>{index === 1 ? "경기" : "서울"}</dd></div><div><dt>직업</dt><dd>{player.job}</dd></div></dl>
+                  <blockquote className="profileIntro">“{player.intro}”</blockquote>
+                  <em className="verifyBadge">본인인증 완료 ✓</em>
                 </div>
               </article>
             ))}
