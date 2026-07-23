@@ -11,17 +11,17 @@ const readProduct = () => Promise.all([
 test("회원가입, 프로필, 로비와 방 생성 요구사항을 유지한다", async () => {
   const [page] = await readProduct();
 
-  assert.match(page, /useState\(600\)/);
-  assert.match(page, /가입을 마치면 시작 마일리지 600을 드리며/);
+  assert.match(page, /useState\(1000\)/);
+  assert.match(page, /가입을 마치면 시작 마일리지 1,000을 드리며/);
   assert.match(page, /profilePhotos\.length \+ files\.length > 5/);
   assert.match(page, /aria-pressed=\{index === primaryProfilePhotoIndex\}/);
   assert.match(page, /filteredLobbyRooms\.slice/);
   assert.match(page, /게임방 목록 페이지/);
   assert.match(page, /role="radiogroup" aria-label="방 테마"/);
   assert.match(page, /남녀 비율은 언제나 1:1/);
-  assert.match(page, /방을 만들려면 500 마일리지가 필요해요/);
-  assert.match(page, /setMileageBalance\(\(balance\) => balance - 500\)/);
-  assert.match(page, /500 마일리지로 방 만들기/);
+  assert.match(page, /방을 만들려면 200 마일리지가 필요해요/);
+  assert.match(page, /setMileageBalance\(\(balance\) => balance - 200\)/);
+  assert.match(page, /200 마일리지로 방 만들기/);
 });
 
 test("대기방의 소통, 프로필 열람과 안전 기능을 유지한다", async () => {
@@ -34,8 +34,11 @@ test("대기방의 소통, 프로필 열람과 안전 기능을 유지한다", a
   assert.match(page, /aria-pressed=\{likedProfiles\.includes\(person\.id\)\}/);
   assert.match(page, /강퇴 투표/);
   assert.match(page, /참가자별 강퇴 투표 현황/);
-  assert.match(page, /200 마일리지로 열기/);
-  assert.match(page, /setMileageBalance\(\(balance\) => balance - 200\)/);
+  assert.match(page, /50 마일리지로 열기/);
+  assert.match(page, /setMileageBalance\(\(balance\) => balance - 50\)/);
+  assert.match(page, /unlockedPhotoKeys/);
+  assert.match(page, /\[0, 1, 2, 3, 4\]\.map/);
+  assert.match(page, /`\$\{profileId\}:\$\{index\}`/);
   assert.match(css, /\.profileReactionBubble\s*\{[^}]*right:\s*-12px/);
   assert.match(css, /border-radius:\s*50% 50% 50% 8px/);
   assert.doesNotMatch(css, /\.profileReactionBubble::after/);
@@ -58,6 +61,8 @@ test("전체 게임 라운드와 결과 흐름을 유지한다", async () => {
   assert.match(page, /🥇/);
   assert.match(page, /🥈/);
   assert.match(page, /🥉/);
+  assert.match(page, /\[300, 200, 150\]/);
+  assert.match(page, /const firstGameBonus = 200/);
   assert.match(page, /musicRound === "roundFive"/);
   assert.match(page, /musicRound === "roundSix"/);
 });
@@ -70,8 +75,8 @@ test("친구, 1시간 채팅과 마일리지 정책을 유지한다", async () =
   assert.match(page, /대화를 종료했습니다/);
   assert.match(page, /채팅방 나가기/);
   assert.match(page, /로비로 돌아가기/);
-  assert.match(page, /500 마일리지로 대화 신청/);
-  assert.match(page, /상대가 대화를 거절해 신청 비용의 절반인 250 마일리지가 반환됐어요/);
+  assert.match(page, /300 마일리지로 대화 신청/);
+  assert.match(page, /상대가 대화를 거절해 신청 비용의 80%인 240 마일리지가 반환됐어요/);
   assert.match(page, /채팅하기를 원합니다/);
   assert.match(page, /참여하시겠습니까/);
 });

@@ -293,7 +293,7 @@ export default function Home() {
   const [photoViewerId, setPhotoViewerId] = useState<string | null>(null);
   const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
   const [pendingPhotoIndex, setPendingPhotoIndex] = useState<number | null>(null);
-  const [unlockedPhotoIds, setUnlockedPhotoIds] = useState<string[]>([]);
+  const [unlockedPhotoKeys, setUnlockedPhotoKeys] = useState<string[]>([]);
   const [photoViewerNotice, setPhotoViewerNotice] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
@@ -334,7 +334,7 @@ export default function Home() {
   const [chatSeconds, setChatSeconds] = useState(3600);
   const [chatEndedBy, setChatEndedBy] = useState<string | null>(null);
   const [friendStatus, setFriendStatus] = useState<"none" | "pending" | "friends">("friends");
-  const [mileageBalance, setMileageBalance] = useState(600);
+  const [mileageBalance, setMileageBalance] = useState(1000);
   const [rewardClaimed, setRewardClaimed] = useState(false);
   const [mileageNotice, setMileageNotice] = useState("");
   const [activeChatFriendId, setActiveChatFriendId] = useState("b1");
@@ -416,7 +416,8 @@ export default function Home() {
   const kickVoteThreshold = Math.floor(activeRoom.people / 2) + 1;
   const kickVoters = visibleWaitingProfiles.filter((person) => person.id !== kickCandidateId).slice(0, Math.max(1, activeRoom.people - 1));
   const photoViewerPerson = demoWaitingProfiles.find((person) => person.id === photoViewerId);
-  const hasUnlockedExtraPhotos = Boolean(photoViewerId && unlockedPhotoIds.includes(photoViewerId));
+  const isPhotoUnlocked = (profileId: string, index: number) =>
+    index === 0 || unlockedPhotoKeys.includes(`${profileId}:${index}`);
 
   const toggleProfileLike = (profileId: string) => {
     setLikedProfiles((previous) => previous.includes(profileId)
@@ -460,7 +461,7 @@ export default function Home() {
   };
 
   const selectProfilePhoto = (index: number) => {
-    if (index === 0 || hasUnlockedExtraPhotos) {
+    if (photoViewerId && isPhotoUnlocked(photoViewerId, index)) {
       setPhotoViewerIndex(index);
       return;
     }
@@ -470,15 +471,16 @@ export default function Home() {
 
   const unlockExtraProfilePhotos = () => {
     if (!photoViewerId || pendingPhotoIndex === null) return;
-    if (mileageBalance < 200) {
-      setPhotoViewerNotice("마일리지가 부족해요. 추가 사진을 보려면 200 마일리지가 필요합니다.");
+    if (mileageBalance < 50) {
+      setPhotoViewerNotice("마일리지가 부족해요. 추가 사진 한 장을 보려면 50 마일리지가 필요합니다.");
       return;
     }
-    setMileageBalance((balance) => balance - 200);
-    setUnlockedPhotoIds((ids) => [...ids, photoViewerId]);
+    const photoKey = `${photoViewerId}:${pendingPhotoIndex}`;
+    setMileageBalance((balance) => balance - 50);
+    setUnlockedPhotoKeys((keys) => keys.includes(photoKey) ? keys : [...keys, photoKey]);
     setPhotoViewerIndex(pendingPhotoIndex);
     setPendingPhotoIndex(null);
-    setPhotoViewerNotice("추가 사진이 열렸어요. 이 대기방에서는 다시 차감되지 않습니다.");
+    setPhotoViewerNotice("사진 한 장이 열렸어요. 이 사진은 다시 열어도 차감되지 않습니다.");
   };
 
   const enterLobby = (verified = isVerified) => {
@@ -503,8 +505,8 @@ export default function Home() {
     const minAge = Number(roomMinAge);
     const maxAge = Number(roomMaxAge);
     if (!roomTitle.trim() || !roomMinAge || !roomMaxAge || minAge > maxAge) return;
-    if (mileageBalance < 500) {
-      setMileageNotice("방을 만들려면 500 마일리지가 필요해요.");
+    if (mileageBalance < 200) {
+      setMileageNotice("방을 만들려면 200 마일리지가 필요해요.");
       return;
     }
     const room: RoomConfig = {
@@ -521,9 +523,9 @@ export default function Home() {
     };
     setCreatedRoom(room);
     setActiveRoom(room);
-    setMileageBalance((balance) => balance - 500);
+    setMileageBalance((balance) => balance - 200);
     setMileageNotice("");
-    setAuthNotice(`‘${room.title}’ 방이 만들어졌고 500 마일리지가 차감됐어요. 남은 마일리지는 ${mileageBalance - 500}이에요.`);
+    setAuthNotice(`‘${room.title}’ 방이 만들어졌고 200 마일리지가 차감됐어요. 남은 마일리지는 ${mileageBalance - 200}이에요.`);
     transitionTo("lobby");
   };
 
@@ -934,9 +936,10 @@ export default function Home() {
   const openFinalResults = () => {
     if (!rewardClaimed) {
       const ourRank = finalRanking.findIndex((entry) => entry.isOurs);
-      const reward = [300, 200, 100][ourRank] ?? 100;
-      setMileageBalance((balance) => balance + reward);
-      setMileageNotice(`이번 게임 보상 ${reward} 마일리지가 적립됐어요.`);
+      const reward = [300, 200, 150][ourRank] ?? 150;
+      const firstGameBonus = 200;
+      setMileageBalance((balance) => balance + reward + firstGameBonus);
+      setMileageNotice(`순위 보상 ${reward} + 첫 게임 완료 보너스 ${firstGameBonus}, 총 ${reward + firstGameBonus} 마일리지가 적립됐어요.`);
       setRewardClaimed(true);
     }
     transitionTo("final-result");
@@ -969,13 +972,13 @@ export default function Home() {
   };
 
   const reopenFriendChat = (friendId: string) => {
-    if (mileageBalance < 500) {
+    if (mileageBalance < 300) {
       setMileageNotice("마일리지가 부족해요. 충전 기능은 정식 결제 정책 준비 후 제공될 예정입니다.");
       return;
     }
-    setMileageBalance((balance) => balance - 500);
+    setMileageBalance((balance) => balance - 300);
     setPendingChatFriendId(friendId);
-    setMileageNotice("대화 신청 비용 500 마일리지를 보관 중이에요. 상대의 응답을 기다려 주세요.");
+    setMileageNotice("대화 신청 비용 300 마일리지를 보관 중이에요. 상대의 응답을 기다려 주세요.");
   };
 
   const acceptChatRequest = () => {
@@ -989,8 +992,8 @@ export default function Home() {
   const rejectChatRequest = () => {
     if (!pendingChatFriendId) return;
     setPendingChatFriendId(null);
-    setMileageBalance((balance) => balance + 250);
-    setMileageNotice("상대가 대화를 거절해 신청 비용의 절반인 250 마일리지가 반환됐어요.");
+    setMileageBalance((balance) => balance + 240);
+    setMileageNotice("상대가 대화를 거절해 신청 비용의 80%인 240 마일리지가 반환됐어요.");
   };
 
   return (
@@ -1083,8 +1086,8 @@ export default function Home() {
           <div className="authCard signupCard">
             <p className="eyebrow">STEP 1 OF 2</p>
             <h2 id="signup-title">기본 프로필 만들기</h2>
-            <p>게임에 필요한 최소 정보만 받아요. 가입을 마치면 시작 마일리지 600을 드리며, 실명과 연락처는 프로필에 공개되지 않습니다.</p>
-            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) { setMileageBalance(600); setProfileName(nickname.trim()); setProfileReturn("verify"); transitionTo("profile"); } }}>
+            <p>게임에 필요한 최소 정보만 받아요. 가입을 마치면 시작 마일리지 1,000을 드리며, 실명과 연락처는 프로필에 공개되지 않습니다.</p>
+            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) { setMileageBalance(1000); setProfileName(nickname.trim()); setProfileReturn("verify"); transitionTo("profile"); } }}>
               <label htmlFor="signup-nickname">닉네임</label>
               <input id="signup-nickname" required maxLength={12} autoComplete="nickname" value={nickname}
                 onChange={(event) => setNickname(event.target.value)} />
@@ -1213,7 +1216,7 @@ export default function Home() {
           </div>
           <div className="lobbyHeading">
             <div><p className="eyebrow">LIVE ROOMS</p><h2>참가 가능한 게임방</h2></div>
-            <button className="secondaryButton" type="button" onClick={() => { setMileageNotice(""); transitionTo("create-room"); }}>＋ 새 방 만들기 · 500 마일리지</button>
+            <button className="secondaryButton" type="button" onClick={() => { setMileageNotice(""); transitionTo("create-room"); }}>＋ 새 방 만들기 · 200 마일리지</button>
           </div>
           <form className="roomSearchPanel" onSubmit={(event) => event.preventDefault()} aria-label="맞춤 방 검색">
             <div className="roomSearchHeading"><div><b>내 조건에 맞는 방 찾기</b><p>원하는 나이대와 지역을 선택해 보세요.</p></div><span>{filteredLobbyRooms.length}개 방</span></div>
@@ -1324,9 +1327,9 @@ export default function Home() {
               <div className="previewRule"><span>나이</span><b>{roomMinAge}–{roomMaxAge}세</b></div>
               <div className="previewRule"><span>지역</span><b>{roomRegion}</b></div>
               <div className="previewSeats">{Array.from({ length: roomCapacity }, (_, index) => <span key={index}>{index === 0 ? "♥" : "+"}</span>)}</div>
-              <p className="creatorRule">방을 만들면 500 마일리지가 차감됩니다. 실제 참가 시에는 본인인증이 필요해요.</p>
+              <p className="creatorRule">방을 만들면 200 마일리지가 차감됩니다. 실제 참가 시에는 본인인증이 필요해요.</p>
               {mileageNotice && <p className="fieldError" role="alert">{mileageNotice}</p>}
-              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || !roomMinAge || !roomMaxAge || Number(roomMinAge) > Number(roomMaxAge)}>500 마일리지로 방 만들기</button>
+              <button className="primaryButton" type="submit" disabled={!roomTitle.trim() || !roomMinAge || !roomMaxAge || Number(roomMinAge) > Number(roomMaxAge)}>200 마일리지로 방 만들기</button>
             </aside>
           </form>
         </section>
@@ -1446,26 +1449,26 @@ export default function Home() {
                 <p className="eyebrow">PROFILE PHOTOS</p>
                 <h2 id="photo-viewer-title">{photoViewerPerson.name}님의 사진</h2>
                 <div className={`demoProfilePhoto photo-${photoViewerIndex}`} style={{ "--photo-color": photoViewerPerson.color } as React.CSSProperties}>
-                  <span>{photoViewerPerson.avatar}</span><small>{photoViewerIndex + 1} / 3</small>
+                  <span>{photoViewerPerson.avatar}</span><small>{photoViewerIndex + 1} / 5</small>
                 </div>
                 <div className="photoViewerThumbs" aria-label="프로필 사진 선택">
-                  {[0, 1, 2].map((index) => {
-                    const locked = index > 0 && !hasUnlockedExtraPhotos;
+                  {[0, 1, 2, 3, 4].map((index) => {
+                    const locked = !isPhotoUnlocked(photoViewerPerson.id, index);
                     return <button type="button" key={index} className={photoViewerIndex === index ? "selected" : ""} onClick={() => selectProfilePhoto(index)}
-                      aria-label={`${index + 1}번 사진${locked ? ", 200 마일리지 필요" : ""}`}>
+                      aria-label={`${index + 1}번 사진${locked ? ", 50 마일리지 필요" : ""}`}>
                       <span style={{ background: `linear-gradient(${125 + index * 35}deg, ${photoViewerPerson.color}, #211b2c)` }}>{locked ? "🔒" : photoViewerPerson.avatar}</span>
-                      <small>{index === 0 ? "대표" : locked ? "200M" : `${index + 1}번`}</small>
+                      <small>{index === 0 ? "대표" : locked ? "50M" : `${index + 1}번`}</small>
                     </button>;
                   })}
                 </div>
-                {!hasUnlockedExtraPhotos && <p className="photoMileageGuide">대표 사진은 무료예요. 나머지 사진을 처음 열 때 <b>200 마일리지</b>가 차감됩니다.</p>}
-                {hasUnlockedExtraPhotos && <p className="photoMileageGuide unlocked">✓ 추가 사진 열람 완료 · 이 대기방에서는 재차감 없음</p>}
+                <p className="photoMileageGuide">대표 사진은 무료예요. 추가 사진은 <b>한 장마다 50 마일리지</b>이며, 한 번 연 사진은 다시 차감되지 않습니다.</p>
+                {photoViewerIndex > 0 && isPhotoUnlocked(photoViewerPerson.id, photoViewerIndex) && <p className="photoMileageGuide unlocked">✓ 이 사진은 열람 완료 · 다시 차감되지 않아요</p>}
                 {photoViewerNotice && <p className="photoViewerNotice" role="status">{photoViewerNotice}</p>}
                 {pendingPhotoIndex !== null && (
                   <div className="photoUnlockConfirm" role="alertdialog" aria-modal="true" aria-labelledby="photo-unlock-title">
                     <h3 id="photo-unlock-title">추가 사진을 볼까요?</h3>
-                    <p>보유 마일리지 <b>{mileageBalance}</b> 중 <strong>200 마일리지</strong>가 차감됩니다.</p>
-                    <div><button className="secondaryButton" type="button" onClick={() => setPendingPhotoIndex(null)}>취소</button><button className="primaryButton" type="button" onClick={unlockExtraProfilePhotos}>200 마일리지로 열기</button></div>
+                    <p>{pendingPhotoIndex + 1}번 사진을 열면 보유 마일리지 <b>{mileageBalance}</b> 중 <strong>50 마일리지</strong>가 차감됩니다.</p>
+                    <div><button className="secondaryButton" type="button" onClick={() => setPendingPhotoIndex(null)}>취소</button><button className="primaryButton" type="button" onClick={unlockExtraProfilePhotos}>50 마일리지로 열기</button></div>
                   </div>
                 )}
               </section>
@@ -1882,7 +1885,7 @@ export default function Home() {
           </div>
           <div className="podium" aria-label="최종 커플 순위">
             {finalRanking.map((entry, index) => {
-              const mileage = [300, 200, 100][index];
+              const mileage = [300, 200, 150][index];
               return (
                 <article className={`podiumCard rank${index + 1} ${entry.isOurs ? "ourCouple" : ""}`} key={`${entry.couple[0].id}-${entry.couple[1].id}`}>
                   <div className="rankBadge" aria-label={`${index + 1}등 ${medalInfo[index].label}`}><span>{medalInfo[index].icon}</span><small>{medalInfo[index].label}</small></div>
@@ -1898,6 +1901,7 @@ export default function Home() {
               );
             })}
           </div>
+          <p className="mileageNotice">첫 게임을 완료하면 순위 보상과 별도로 <b>200 마일리지</b>가 추가 적립돼요.</p>
           <div className="scoreBreakdown">
             <div><span>01</span><p>첫인상 매칭<b>기본 55점</b></p></div>
             <div><span>02</span><p>취향 퀴즈<b>{score} / {quizQuestions.length}</b></p></div>
@@ -1990,7 +1994,7 @@ export default function Home() {
                   </div>
             ))}
             {chatEndedBy && <div className="chatExpired" role="status"><b>대화가 종료됐어요</b><p>상대방 화면에도 종료 메시지가 표시됩니다.</p></div>}
-            {chatSeconds === 0 && !chatEndedBy && <div className="chatExpired" role="status"><b>1시간 대화가 종료됐어요</b><p>친구가 되었다면 친구창에서 500 마일리지로 다시 대화할 수 있어요.</p></div>}
+            {chatSeconds === 0 && !chatEndedBy && <div className="chatExpired" role="status"><b>1시간 대화가 종료됐어요</b><p>친구가 되었다면 친구창에서 300 마일리지로 다시 대화할 수 있어요.</p></div>}
           </div>
           <form className="chatComposer" onSubmit={sendChatMessage}>
             {chatImage && <div className="chatImagePreview">
@@ -2022,8 +2026,8 @@ export default function Home() {
               <article className="friendCard" key={friend.id}>
                 <span className="friendAvatar" style={{ background: friend.color }}>{friend.avatar}</span>
                 <div><h3>{friend.name}</h3><p>{index === 0 ? "최종 선택으로 연결된 친구" : "Heart Round 게임 친구"}</p></div>
-                <button className="primaryButton" disabled={mileageBalance < 500 || pendingChatFriendId !== null}
-                  onClick={() => reopenFriendChat(friend.id)}>500 마일리지로 대화 신청</button>
+                <button className="primaryButton" disabled={mileageBalance < 300 || pendingChatFriendId !== null}
+                  onClick={() => reopenFriendChat(friend.id)}>300 마일리지로 대화 신청</button>
               </article>
             ))}
           </div>
@@ -2048,7 +2052,7 @@ export default function Home() {
                   <button className="secondaryButton" onClick={rejectChatRequest}>거절하기</button>
                   <button className="primaryButton" onClick={acceptChatRequest}>참여하기</button>
                 </div>
-                <small>거절하면 신청자에게 250 마일리지가 반환됩니다.</small>
+                <small>거절하면 신청자에게 신청 비용의 80%인 240 마일리지가 반환됩니다.</small>
               </section>
             </div>
           )}
