@@ -219,6 +219,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .waitingStatus > div { display: flex; align-items: center; gap: 7px; }.waitingStatus p { margin: 0; color: #9f94a9; font-size: 10px; }
 .pulseDot { width: 8px; height: 8px; background: #4fe0a9; border-radius: 50%; box-shadow: 0 0 0 5px rgba(79,224,169,.1); animation: lobbyPulse 1.5s ease-in-out infinite; }
 @keyframes lobbyPulse { 50% { box-shadow: 0 0 0 9px rgba(79,224,169,0); } }
+.genderWaitingLayout { display: grid; gap: 17px; }
+.genderRow { display: grid; grid-template-columns: 135px 1fr; gap: 14px; padding: 17px; background: rgba(24,20,31,.56); border: 1px solid var(--line); border-radius: 20px; }
+.genderRow.men { border-left: 3px solid #628cff; }.genderRow.women { border-left: 3px solid #ff6f9b; }
+.genderRowTitle { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 10px; text-align: center; }.genderRowTitle > span { width: 45px; height: 45px; display: grid; place-items: center; color: white; background: #3c5ea9; border-radius: 50%; font-size: 13px; font-weight: 900; }.women .genderRowTitle > span { background: #a83f66; }
+.genderRowTitle h2, .genderRowTitle p { margin: 0; }.genderRowTitle h2 { font-size: 15px; }.genderRowTitle p { margin-top: 5px; color: var(--muted); font-size: 9px; }
 .waitingProfileGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
 .waitingProfileCard { min-height: 380px; padding: 26px 20px 20px; background: linear-gradient(150deg, #211c2a, #17141e); border: 1px solid var(--line); border-radius: 20px; }
 .waitingProfileCard.mine { border-color: rgba(255,105,151,.55); box-shadow: 0 0 0 3px rgba(255,105,151,.08); }
@@ -228,9 +233,14 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .profileIdentity { display: flex; align-items: baseline; justify-content: center; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }.profileIdentity h2 { font-size: 20px; }.profileIdentity b { color: #b8aec3; font-size: 11px; }
 .profileFacts { display: grid; grid-template-columns: .7fr 1.3fr; gap: 8px; margin: 13px 0; }.profileFacts > div { min-width: 0; }.profileFacts dt { margin-bottom: 4px; color: #80758b; font-size: 8px; font-weight: 900; letter-spacing: .08em; }.profileFacts dd { margin: 0; overflow: hidden; color: #d8d0df; font-size: 10px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .profileIntro { min-height: 55px; margin: 0 0 12px; padding: 11px; color: #ded7e7; background: #18141e; border-radius: 10px; font-size: 10px; line-height: 1.55; }
-.verifyBadge { display: block; color: #72d9b2; text-align: right; font-size: 9px; font-style: normal; font-weight: 900; }
+.profileCardFooter { display: flex; align-items: center; justify-content: space-between; gap: 7px; }.verifyBadge { display: block; color: #72d9b2; text-align: right; font-size: 9px; font-style: normal; font-weight: 900; }
+.profileLikeButton { padding: 7px 9px; color: #d5ccd9; background: #211c28; border: 1px solid var(--line); border-radius: 99px; cursor: pointer; font-size: 9px; font-weight: 900; }.profileLikeButton.liked { color: white; background: rgba(255,105,151,.17); border-color: #ff719c; }
+.receivedLikes { color: #ff91b2; font-size: 9px; font-weight: 900; }.receivedLikes b { display: inline-grid; place-items: center; min-width: 19px; height: 19px; margin-left: 3px; color: white; background: #d34f79; border-radius: 50%; }
 .emptySeat { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 315px; text-align: center; background: rgba(24,20,31,.45); border-style: dashed; }
 .emptySeat > span { width: 60px; height: 60px; display: grid; place-items: center; color: #756b81; border: 1px dashed #5b5265; border-radius: 50%; font-size: 25px; }.emptySeat h2 { margin: 16px 0 7px; color: #aaa0b5; font-size: 15px; }.emptySeat p { margin: 0; color: #6f6678; font-size: 10px; }
+.reactionPanel { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 18px; margin-top: 18px; padding: 19px 21px; background: var(--panel); border: 1px solid var(--line); border-radius: 17px; }.reactionPanel b, .reactionPanel p { margin: 0; }.reactionPanel > div:first-child p { margin-top: 5px; color: var(--muted); font-size: 10px; }
+.reactionButtons { display: flex; gap: 7px; }.reactionButtons button { min-width: 69px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 8px; color: #cfc5d8; background: #121017; border: 1px solid var(--line); border-radius: 11px; cursor: pointer; font-size: 8px; }.reactionButtons button:hover { border-color: #ff88ac; transform: translateY(-2px); }.reactionButtons span { font-size: 23px; }
+.reactionNotice { grid-column: 1 / -1; padding: 10px 12px; color: #e8deee; text-align: center; background: rgba(140,108,255,.1); border-radius: 9px; font-size: 10px; }.reactionNotice span { margin-right: 3px; font-size: 18px; vertical-align: middle; }
 .waitingFooter { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 20px; padding: 20px 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 17px; }.waitingFooter b, .waitingFooter p { display: block; margin: 0; }.waitingFooter p { margin-top: 5px; color: var(--muted); font-size: 10px; }.readyButton.ready { background: linear-gradient(135deg, #26a77b, #277d70); }
 .readyNotice { margin: 12px 0 0; padding: 12px; color: #baf5da; text-align: center; background: rgba(46,172,125,.1); border-radius: 11px; font-size: 11px; }
 
@@ -513,7 +523,9 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .ageRange { flex-wrap: wrap; }.ageRange input { width: 100%; }.ageRange label { flex: 1; min-width: 110px; }
   .waitingHeader { display: block; }.waitingHeader .secondaryButton { margin-top: 18px; }
   .waitingStatus, .waitingFooter { align-items: flex-start; flex-direction: column; }
+  .genderRow { grid-template-columns: 1fr; }.genderRowTitle { flex-direction: row; justify-content: flex-start; text-align: left; }
   .waitingProfileGrid { grid-template-columns: 1fr; }
+  .reactionPanel { grid-template-columns: 1fr; }.reactionButtons { display: grid; grid-template-columns: 1fr 1fr; }.reactionButtons button { min-width: 0; }
   .waitingFooter .primaryButton { width: 100%; }
   .landing { display: block; padding-top: 55px; }
   .orbit { width: 310px; height: 310px; margin: 70px auto 120px; justify-self: auto; }

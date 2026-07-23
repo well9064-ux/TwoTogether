@@ -236,6 +236,7 @@ export default function Home() {
   const [profileName, setProfileName] = useState("김하트");
   const [profileAge, setProfileAge] = useState("29");
   const [profileRegion, setProfileRegion] = useState("서울");
+  const [profileGender, setProfileGender] = useState<"남성" | "여성">("남성");
   const [profileJob, setProfileJob] = useState("서비스 기획자");
   const [profileIntro, setProfileIntro] = useState("좋은 대화와 맛있는 음식을 좋아해요.");
   const [profilePhoto, setProfilePhoto] = useState("");
@@ -248,6 +249,9 @@ export default function Home() {
   const [roomCapacity, setRoomCapacity] = useState<4 | 6>(6);
   const [createdRoom, setCreatedRoom] = useState<RoomConfig | null>(null);
   const [activeRoom, setActiveRoom] = useState<RoomConfig>(defaultRooms[0]);
+  const [likedProfiles, setLikedProfiles] = useState<string[]>([]);
+  const [receivedLikes] = useState(2);
+  const [lastReaction, setLastReaction] = useState<{ emoji: string; label: string } | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -339,6 +343,26 @@ export default function Home() {
     : screen === "landing" || screen === "signal" || screen === "match-result"
       ? "roundOne" : "roundTwo";
   const currentTrack = musicThemes[musicRound];
+  const myWaitingProfile = {
+    id: "me", name: profileName, age: Number(profileAge), region: profileRegion,
+    job: profileJob, intro: profileIntro, avatar: profileName.slice(0, 1), color: "#8c6cff",
+    gender: profileGender, isMe: true,
+  };
+  const demoWaitingProfiles = players.map((player, index) => ({
+    id: player.id, name: player.name, age: player.age, region: index % 3 === 0 ? "서울" : index % 3 === 1 ? "경기" : "인천",
+    job: player.job, intro: player.intro, avatar: player.avatar, color: player.color,
+    gender: player.team === "A" ? "남성" as const : "여성" as const, isMe: false,
+  }));
+  const maleSeatCount = Math.ceil(activeRoom.people / 2);
+  const femaleSeatCount = Math.floor(activeRoom.people / 2);
+  const waitingMen = [myWaitingProfile, ...demoWaitingProfiles].filter((person) => person.gender === "남성").slice(0, maleSeatCount);
+  const waitingWomen = [myWaitingProfile, ...demoWaitingProfiles].filter((person) => person.gender === "여성").slice(0, femaleSeatCount);
+
+  const toggleProfileLike = (profileId: string) => {
+    setLikedProfiles((previous) => previous.includes(profileId)
+      ? previous.filter((id) => id !== profileId)
+      : [...previous, profileId]);
+  };
 
   const enterLobby = (verified = isVerified) => {
     setIsVerified(verified);
@@ -951,6 +975,12 @@ export default function Home() {
                     {["서울", "경기", "인천", "강원", "충청", "전라", "경상", "제주"].map((region) => <option key={region}>{region}</option>)}
                   </select>
                 </div>
+                <div>
+                  <label htmlFor="profile-gender">성별</label>
+                  <select id="profile-gender" required value={profileGender} onChange={(event) => setProfileGender(event.target.value as "남성" | "여성")}>
+                    <option>남성</option><option>여성</option>
+                  </select>
+                </div>
                 <div><label htmlFor="profile-job">직업</label><input id="profile-job" required maxLength={30} value={profileJob} onChange={(event) => setProfileJob(event.target.value)} /></div>
               </div>
               <label htmlFor="profile-intro">간단한 소개</label>
@@ -1098,42 +1128,58 @@ export default function Home() {
             <div><span className="pulseDot" />현재 <b>{activeRoom.people}명</b>이 기다리고 있어요</div>
             <p>{activeRoom.capacity === 4 ? "2:2" : "3:3"} 매칭까지 {activeRoom.capacity - activeRoom.people}자리 남았습니다</p>
           </div>
-          <div className="waitingProfileGrid" aria-label="대기 중인 참가자 프로필">
-            <article className="waitingProfileCard mine">
-              <div className="waitingPortrait">
-                {profilePhoto ? (
-                  // 데모에서 사용자가 방금 선택한 로컬 data URL을 즉시 미리보기 합니다.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={profilePhoto} alt={`${profileName} 프로필`} />
-                ) : <span>{profileName.slice(0, 1)}</span>}
-                <i>나</i>
-              </div>
-              <div className="waitingProfileBody">
-                <div className="profileIdentity"><h2>{profileName}</h2><b>{profileAge}세</b></div>
-                <dl className="profileFacts"><div><dt>지역</dt><dd>{profileRegion}</dd></div><div><dt>직업</dt><dd>{profileJob}</dd></div></dl>
-                <blockquote className="profileIntro">“{profileIntro}”</blockquote>
-                <em className="verifyBadge">본인인증 완료 ✓</em>
-              </div>
-            </article>
-            {[players[3], players[1], players[4], players[2], players[5]].slice(0, Math.max(0, activeRoom.people - 1)).map((player, index) => (
-              <article className="waitingProfileCard" key={player.id}>
-                <div className="waitingPortrait" style={{ background: `linear-gradient(145deg, ${player.color}, #211b2c)` }}>
-                  <span>{player.avatar}</span><i>{index % 2 === 0 ? "여" : "남"}</i>
+          <div className="genderWaitingLayout" aria-label="성별로 구분된 대기 중인 참가자 프로필">
+            {[
+              { key: "men", title: "남성 참가자", people: waitingMen, seats: activeRoom.capacity / 2, mark: "M" },
+              { key: "women", title: "여성 참가자", people: waitingWomen, seats: activeRoom.capacity / 2, mark: "W" },
+            ].map((group) => (
+              <section className={`genderRow ${group.key}`} key={group.key} aria-labelledby={`${group.key}-title`}>
+                <div className="genderRowTitle"><span>{group.mark}</span><div><h2 id={`${group.key}-title`}>{group.title}</h2><p>{group.people.length} / {group.seats}명 입장</p></div></div>
+                <div className="waitingProfileGrid">
+                  {group.people.map((person) => (
+                    <article className={`waitingProfileCard ${person.isMe ? "mine" : ""}`} key={person.id}>
+                      <div className="waitingPortrait" style={{ background: `linear-gradient(145deg, ${person.color}, #211b2c)` }}>
+                        {person.isMe && profilePhoto ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={profilePhoto} alt={`${person.name} 프로필`} />
+                        ) : <span>{person.avatar}</span>}
+                        <i>{person.isMe ? "나" : group.mark}</i>
+                      </div>
+                      <div className="waitingProfileBody">
+                        <div className="profileIdentity"><h2>{person.name}</h2><b>{person.age}세</b></div>
+                        <dl className="profileFacts"><div><dt>지역</dt><dd>{person.region}</dd></div><div><dt>직업</dt><dd>{person.job}</dd></div></dl>
+                        <blockquote className="profileIntro">“{person.intro}”</blockquote>
+                        <div className="profileCardFooter">
+                          {person.isMe
+                            ? <span className="receivedLikes" aria-label={`받은 좋아요 ${receivedLikes}개`}>♥ 받은 좋아요 <b>{receivedLikes}</b></span>
+                            : <button className={`profileLikeButton ${likedProfiles.includes(person.id) ? "liked" : ""}`} type="button"
+                                aria-pressed={likedProfiles.includes(person.id)} onClick={() => toggleProfileLike(person.id)}>
+                                {likedProfiles.includes(person.id) ? "♥ 좋아요 완료" : "♡ 좋아요"}
+                              </button>}
+                          <em className="verifyBadge">인증 ✓</em>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                  {Array.from({ length: group.seats - group.people.length }, (_, seat) => (
+                    <article className="waitingProfileCard emptySeat" key={seat}>
+                      <span>＋</span><h2>참가자를 기다리는 중</h2><p>{group.title} 자리가 비어 있어요</p>
+                    </article>
+                  ))}
                 </div>
-                <div className="waitingProfileBody">
-                  <div className="profileIdentity"><h2>{player.name}</h2><b>{player.age}세</b></div>
-                  <dl className="profileFacts"><div><dt>지역</dt><dd>{index === 1 ? "경기" : "서울"}</dd></div><div><dt>직업</dt><dd>{player.job}</dd></div></dl>
-                  <blockquote className="profileIntro">“{player.intro}”</blockquote>
-                  <em className="verifyBadge">본인인증 완료 ✓</em>
-                </div>
-              </article>
-            ))}
-            {Array.from({ length: activeRoom.capacity - activeRoom.people }, (_, seat) => (
-              <article className="waitingProfileCard emptySeat" key={seat}>
-                <span>＋</span><h2>참가자를 기다리는 중</h2><p>새로운 인연이 곧 입장합니다</p>
-              </article>
+              </section>
             ))}
           </div>
+          <section className="reactionPanel" aria-labelledby="reaction-title">
+            <div><b id="reaction-title">표정으로 인사하기</b><p>대기실에서는 채팅 없이 간단한 이모티콘만 보낼 수 있어요.</p></div>
+            <div className="reactionButtons">
+              {[{ emoji: "😊", label: "웃어요" }, { emoji: "😢", label: "슬퍼요" }, { emoji: "😠", label: "화났어요" }, { emoji: "🥱", label: "지루해요" }].map((reaction) => (
+                <button type="button" key={reaction.label} aria-label={`${reaction.label} 이모티콘 보내기`}
+                  onClick={() => setLastReaction(reaction)}><span>{reaction.emoji}</span>{reaction.label}</button>
+              ))}
+            </div>
+            {lastReaction && <p className="reactionNotice" role="status"><span>{lastReaction.emoji}</span> {profileName}님이 ‘{lastReaction.label}’ 표정을 보냈어요.</p>}
+          </section>
           <div className="waitingFooter">
             <div><b>게임 구성</b><p>사랑의 작대기 + 랜덤 미니게임 3개 + 최종 선택 · 약 25분</p></div>
             <button className={`primaryButton readyButton ${isReady ? "ready" : ""}`} type="button" aria-pressed={isReady} onClick={() => setIsReady((ready) => !ready)}>

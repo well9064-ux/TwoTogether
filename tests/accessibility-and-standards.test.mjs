@@ -121,7 +121,7 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /id="profile-job"/);
   assert.match(page, /id="profile-intro"/);
   assert.match(page, /file\.size > 5 \* 1024 \* 1024/);
-  assert.match(page, /aria-label="대기 중인 참가자 프로필"/);
+  assert.match(page, /aria-label="성별로 구분된 대기 중인 참가자 프로필"/);
   assert.match(page, /aria-pressed=\{isReady\}/);
   assert.match(page, /모든 참가자가 모이면 자동으로 게임을 시작합니다/);
   assert.match(page, /type RoomConfig =/);
@@ -133,6 +133,14 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /남녀 비율은 언제나 1:1로 유지됩니다/);
   assert.match(page, /setCreatedRoom\(room\)/);
   assert.match(page, /activeRoom\.capacity - activeRoom\.people/);
+  assert.match(page, /id="profile-gender"/);
+  assert.match(page, /남성 참가자/);
+  assert.match(page, /여성 참가자/);
+  assert.match(page, /const \[likedProfiles, setLikedProfiles\]/);
+  assert.match(page, /aria-pressed=\{likedProfiles\.includes\(person\.id\)\}/);
+  assert.match(page, /받은 좋아요 \$\{receivedLikes\}개/);
+  assert.match(page, /웃어요.*슬퍼요.*화났어요.*지루해요/s);
+  assert.match(page, /대기실에서는 채팅 없이 간단한 이모티콘만 보낼 수 있어요/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /forced-colors:\s*active/);
