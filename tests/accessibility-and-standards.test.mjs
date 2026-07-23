@@ -116,7 +116,8 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /주민등록번호 · 인증 문자 · 연락처 공개값/);
   assert.match(page, /id="profile-photo"/);
   assert.match(page, /type="file" multiple/);
-  assert.match(page, /profilePhotos\.length \+ files\.length > 3/);
+  assert.match(page, /profilePhotos\.length \+ files\.length > 5/);
+  assert.match(page, /slice\(0, 5\)/);
   assert.match(page, /makePrimaryProfilePhoto/);
   assert.match(page, /removeProfilePhoto/);
   assert.match(page, /대표로 선택/);

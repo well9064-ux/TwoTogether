@@ -524,8 +524,8 @@ export default function Home() {
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (!files.length) return;
-    if (profilePhotos.length + files.length > 3) {
-      setAuthNotice("프로필 사진은 최대 3장까지 등록할 수 있어요.");
+    if (profilePhotos.length + files.length > 5) {
+      setAuthNotice("프로필 사진은 최대 5장까지 등록할 수 있어요.");
       return;
     }
     if (files.some((file) => !file.type.startsWith("image/") || file.size > 5 * 1024 * 1024)) {
@@ -537,7 +537,7 @@ export default function Home() {
       reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : "");
       reader.readAsDataURL(file);
     }))).then((images) => {
-      setProfilePhotos((currentPhotos) => [...currentPhotos, ...images.filter(Boolean)].slice(0, 3));
+      setProfilePhotos((currentPhotos) => [...currentPhotos, ...images.filter(Boolean)].slice(0, 5));
       setAuthNotice("");
     });
   };
@@ -1114,13 +1114,13 @@ export default function Home() {
                         aria-pressed={index === primaryProfilePhotoIndex}>{index === primaryProfilePhotoIndex ? "대표 사진 ✓" : "대표로 선택"}</button>
                     </div>
                   ))}
-                  {Array.from({ length: 3 - profilePhotos.length }, (_, index) => <span className="emptyPhotoSlot" key={index} aria-hidden="true">＋</span>)}
+                  {Array.from({ length: 5 - profilePhotos.length }, (_, index) => <span className="emptyPhotoSlot" key={index} aria-hidden="true">＋</span>)}
                 </div>
                 <div className="photoUploadActions">
                   <label className="photoUpload" htmlFor="profile-photo">{profilePhotos.length ? "사진 추가" : "사진 선택"}</label>
-                  <input id="profile-photo" className="srOnly" type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={previewProfilePhoto} disabled={profilePhotos.length >= 3} />
-                  <small>최대 3장 · 사진별 5MB · 사진 위치는 그대로 유지됩니다.</small>
-                  <span>{profilePhotos.length} / 3장</span>
+                  <input id="profile-photo" className="srOnly" type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={previewProfilePhoto} disabled={profilePhotos.length >= 5} />
+                  <small>최대 5장 · 사진별 5MB · 사진 위치는 그대로 유지됩니다.</small>
+                  <span>{profilePhotos.length} / 5장</span>
                 </div>
               </div>
               <div className="profileFields">

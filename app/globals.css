@@ -160,9 +160,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .photoField { display: flex; align-items: center; gap: 18px; margin: 7px 0 14px; padding: 17px; background: #15121b; border: 1px solid var(--line); border-radius: 15px; }
 .profilePhotoPreview { width: 88px; height: 88px; flex: 0 0 auto; display: grid; place-items: center; overflow: hidden; color: white; background: linear-gradient(145deg, var(--pink), var(--violet)); border-radius: 50%; font-size: 30px; font-weight: 900; }
 .profilePhotoPreview img { width: 100%; height: 100%; object-fit: cover; }
-.profilePhotoGallery { display: grid; grid-template-columns: repeat(3, 82px); gap: 10px; }
-.profilePhotoItem, .emptyPhotoSlot { position: relative; width: 82px; height: 82px; display: grid; place-items: center; border-radius: 16px; }
-.profilePhotoItem { height: auto; align-self: start; border: 2px solid transparent; }.profilePhotoItem.primary { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255,105,151,.1); }.profilePhotoItem > button:first-child { width: 100%; height: 82px; padding: 0; overflow: hidden; background: none; border: 0; border-radius: 14px; cursor: pointer; }.profilePhotoItem img { width: 100%; height: 100%; object-fit: cover; }.profilePhotoItem b { position: absolute; left: 6px; bottom: 31px; padding: 4px 6px; color: white; background: rgba(20,16,25,.78); border-radius: 99px; font-size: 7px; }.removePhotoButton { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; color: white; background: #3c303e; border: 2px solid #15121b; border-radius: 50%; cursor: pointer; }
+.profilePhotoGallery { display: grid; grid-template-columns: repeat(5, 72px); gap: 8px; }
+.profilePhotoItem, .emptyPhotoSlot { position: relative; width: 72px; height: 72px; display: grid; place-items: center; border-radius: 16px; }
+.profilePhotoItem { height: auto; align-self: start; border: 2px solid transparent; }.profilePhotoItem.primary { border-color: var(--pink); box-shadow: 0 0 0 3px rgba(255,105,151,.1); }.profilePhotoItem > button:first-child { width: 100%; height: 72px; padding: 0; overflow: hidden; background: none; border: 0; border-radius: 14px; cursor: pointer; }.profilePhotoItem img { width: 100%; height: 100%; object-fit: cover; }.profilePhotoItem b { position: absolute; left: 6px; bottom: 31px; padding: 4px 6px; color: white; background: rgba(20,16,25,.78); border-radius: 99px; font-size: 7px; }.removePhotoButton { position: absolute; top: -7px; right: -7px; width: 24px; height: 24px; display: grid; place-items: center; padding: 0; color: white; background: #3c303e; border: 2px solid #15121b; border-radius: 50%; cursor: pointer; }
 .primaryPhotoButton { width: 100%; margin-top: 5px; padding: 5px 3px; color: #94899e; background: transparent; border: 0; cursor: pointer; font-size: 7px; font-weight: 900; }.primaryPhotoButton.selected { color: #ff9dbb; }
 .emptyPhotoSlot { color: #756b80; background: #100e15; border: 1px dashed rgba(255,255,255,.15); font-size: 22px; }
 .photoUploadActions { min-width: 145px; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }.photoUploadActions > span { padding: 5px 8px; color: #d7cde0; background: #241f2c; border-radius: 99px; font-size: 8px; font-weight: 900; }
@@ -536,7 +536,7 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .authStory ul { margin-bottom: 35px; }
   .authCard { padding: 27px 22px; }
   .profileFields { grid-template-columns: 1fr; }
-  .photoField { align-items: flex-start; flex-direction: column; }.profilePhotoGallery { width: 100%; grid-template-columns: repeat(3, 1fr); }.profilePhotoItem, .emptyPhotoSlot { width: 100%; }.emptyPhotoSlot { height: auto; aspect-ratio: 1; }.profilePhotoItem > button:first-child { height: auto; aspect-ratio: 1; }
+  .photoField { align-items: flex-start; flex-direction: column; }.profilePhotoGallery { width: 100%; grid-template-columns: repeat(5, 1fr); }.profilePhotoItem, .emptyPhotoSlot { width: 100%; }.emptyPhotoSlot { height: auto; aspect-ratio: 1; }.profilePhotoItem > button:first-child { height: auto; aspect-ratio: 1; }
   .lobbyHero { display: block; }
   .lobbyProfile { min-width: 0; margin-top: 25px; }
   .lobbyStats { grid-template-columns: 1fr; margin-bottom: 38px; }
