@@ -76,6 +76,8 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /님이 대화를 종료했습니다/);
   assert.match(page, /onClick=\{endPrivateChat\}>대화 종료/);
   assert.match(page, /채팅방 나가기/);
+  assert.match(page, /onClick=\{\(\) => transitionTo\("lobby"\)\}>로비로 돌아가기/);
+  assert.doesNotMatch(page, />게임으로 돌아가기<\/button>/);
   assert.match(page, /disabled=\{chatSeconds === 0 \|\| chatEndedBy !== null\}/);
   assert.match(page, /const finalRanking =/);
   assert.match(page, /aria-label="최종 커플 순위"/);

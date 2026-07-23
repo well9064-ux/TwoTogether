@@ -2026,7 +2026,7 @@ export default function Home() {
             <button className="secondaryButton" disabled>결제 정책 준비 중</button>
           </div>
           <p className="privacyNote">현재는 데모 데이터입니다. 실제 서비스에서는 로그인 계정에 마일리지·친구·대화 이용 내역이 안전하게 저장됩니다.</p>
-          <button className="secondaryButton centerButton" onClick={() => transitionTo("landing")}>게임으로 돌아가기</button>
+          <button className="secondaryButton centerButton" onClick={() => transitionTo("lobby")}>로비로 돌아가기</button>
           {pendingChatFriend && (
             <div className="requestBackdrop">
               <section className="chatRequestDialog" role="dialog" aria-modal="true" aria-labelledby="chat-request-title">
