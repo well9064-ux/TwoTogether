@@ -119,6 +119,8 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /profilePhotos\.length \+ files\.length > 3/);
   assert.match(page, /makePrimaryProfilePhoto/);
   assert.match(page, /removeProfilePhoto/);
+  assert.match(page, /대표로 선택/);
+  assert.match(page, /aria-pressed=\{index === 0\}/);
   assert.match(page, /id="profile-name"/);
   assert.match(page, /id="profile-age"/);
   assert.match(page, /id="profile-region"/);
@@ -162,6 +164,10 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /profileReadyState/);
   assert.match(page, /강퇴 투표/);
   assert.match(page, /kickVoteThreshold/);
+  assert.match(page, /openProfilePhotos\(person\.id\)/);
+  assert.match(page, /200 마일리지로 열기/);
+  assert.match(page, /setMileageBalance\(\(balance\) => balance - 200\)/);
+  assert.match(page, /unlockedPhotoIds/);
   assert.match(css, /:focus-visible/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(css, /forced-colors:\s*active/);

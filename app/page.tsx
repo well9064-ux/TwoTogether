@@ -288,6 +288,11 @@ export default function Home() {
   const [kickCandidateId, setKickCandidateId] = useState<string | null>(null);
   const [kickVoteCount, setKickVoteCount] = useState(0);
   const [kickedProfileIds, setKickedProfileIds] = useState<string[]>([]);
+  const [photoViewerId, setPhotoViewerId] = useState<string | null>(null);
+  const [photoViewerIndex, setPhotoViewerIndex] = useState(0);
+  const [pendingPhotoIndex, setPendingPhotoIndex] = useState<number | null>(null);
+  const [unlockedPhotoIds, setUnlockedPhotoIds] = useState<string[]>([]);
+  const [photoViewerNotice, setPhotoViewerNotice] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -407,6 +412,8 @@ export default function Home() {
   const visibleLobbyRooms = filteredLobbyRooms.slice((lobbyPage - 1) * 9, lobbyPage * 9);
   const kickCandidate = demoWaitingProfiles.find((person) => person.id === kickCandidateId);
   const kickVoteThreshold = Math.floor(activeRoom.people / 2) + 1;
+  const photoViewerPerson = demoWaitingProfiles.find((person) => person.id === photoViewerId);
+  const hasUnlockedExtraPhotos = Boolean(photoViewerId && unlockedPhotoIds.includes(photoViewerId));
 
   const toggleProfileLike = (profileId: string) => {
     setLikedProfiles((previous) => previous.includes(profileId)
@@ -434,6 +441,35 @@ export default function Home() {
       setKickCandidateId(null);
       setKickVoteCount(0);
     }
+  };
+
+  const openProfilePhotos = (profileId: string) => {
+    setPhotoViewerId(profileId);
+    setPhotoViewerIndex(0);
+    setPendingPhotoIndex(null);
+    setPhotoViewerNotice("");
+  };
+
+  const selectProfilePhoto = (index: number) => {
+    if (index === 0 || hasUnlockedExtraPhotos) {
+      setPhotoViewerIndex(index);
+      return;
+    }
+    setPendingPhotoIndex(index);
+    setPhotoViewerNotice("");
+  };
+
+  const unlockExtraProfilePhotos = () => {
+    if (!photoViewerId || pendingPhotoIndex === null) return;
+    if (mileageBalance < 200) {
+      setPhotoViewerNotice("마일리지가 부족해요. 추가 사진을 보려면 200 마일리지가 필요합니다.");
+      return;
+    }
+    setMileageBalance((balance) => balance - 200);
+    setUnlockedPhotoIds((ids) => [...ids, photoViewerId]);
+    setPhotoViewerIndex(pendingPhotoIndex);
+    setPendingPhotoIndex(null);
+    setPhotoViewerNotice("추가 사진이 열렸어요. 이 대기방에서는 다시 차감되지 않습니다.");
   };
 
   const enterLobby = (verified = isVerified) => {
@@ -1068,6 +1104,8 @@ export default function Home() {
                         {index === 0 && <b>대표</b>}
                       </button>
                       <button className="removePhotoButton" type="button" onClick={() => removeProfilePhoto(index)} aria-label={`${index + 1}번 프로필 사진 삭제`}>×</button>
+                      <button className={`primaryPhotoButton ${index === 0 ? "selected" : ""}`} type="button" onClick={() => makePrimaryProfilePhoto(index)}
+                        aria-pressed={index === 0}>{index === 0 ? "대표 사진 ✓" : "대표로 선택"}</button>
                     </div>
                   ))}
                   {Array.from({ length: 3 - profilePhotos.length }, (_, index) => <span className="emptyPhotoSlot" key={index} aria-hidden="true">＋</span>)}
@@ -1297,7 +1335,12 @@ export default function Home() {
                         {person.isMe && profilePhoto ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={profilePhoto} alt={`${person.name} 프로필`} />
-                        ) : <span>{person.avatar}</span>}
+                        ) : person.isMe ? <span>{person.avatar}</span> : (
+                          <button className="portraitOpenButton" type="button" onClick={() => openProfilePhotos(person.id)}
+                            aria-label={`${person.name}님의 프로필 사진 더 보기`}>
+                            <span>{person.avatar}</span><small>사진 보기</small>
+                          </button>
+                        )}
                         <i>{person.isMe ? "나" : group.mark}</i>
                         {person.isMe && lastReaction && <span className="profileReactionBubble" role="status" aria-label={`내 감정: ${lastReaction.label}`}>{lastReaction.emoji}</span>}
                       </div>
@@ -1359,6 +1402,38 @@ export default function Home() {
             </button>
           </div>
           {isReady && <p className="readyNotice" role="status">준비가 완료됐어요. 모든 참가자가 모이면 자동으로 게임을 시작합니다.</p>}
+          {photoViewerPerson && (
+            <div className="photoViewerBackdrop">
+              <section className="profilePhotoViewer" role="dialog" aria-modal="true" aria-labelledby="photo-viewer-title">
+                <button className="photoViewerClose" type="button" onClick={() => { setPhotoViewerId(null); setPendingPhotoIndex(null); }} aria-label="프로필 사진 닫기">×</button>
+                <p className="eyebrow">PROFILE PHOTOS</p>
+                <h2 id="photo-viewer-title">{photoViewerPerson.name}님의 사진</h2>
+                <div className={`demoProfilePhoto photo-${photoViewerIndex}`} style={{ "--photo-color": photoViewerPerson.color } as React.CSSProperties}>
+                  <span>{photoViewerPerson.avatar}</span><small>{photoViewerIndex + 1} / 3</small>
+                </div>
+                <div className="photoViewerThumbs" aria-label="프로필 사진 선택">
+                  {[0, 1, 2].map((index) => {
+                    const locked = index > 0 && !hasUnlockedExtraPhotos;
+                    return <button type="button" key={index} className={photoViewerIndex === index ? "selected" : ""} onClick={() => selectProfilePhoto(index)}
+                      aria-label={`${index + 1}번 사진${locked ? ", 200 마일리지 필요" : ""}`}>
+                      <span style={{ background: `linear-gradient(${125 + index * 35}deg, ${photoViewerPerson.color}, #211b2c)` }}>{locked ? "🔒" : photoViewerPerson.avatar}</span>
+                      <small>{index === 0 ? "대표" : locked ? "200M" : `${index + 1}번`}</small>
+                    </button>;
+                  })}
+                </div>
+                {!hasUnlockedExtraPhotos && <p className="photoMileageGuide">대표 사진은 무료예요. 나머지 사진을 처음 열 때 <b>200 마일리지</b>가 차감됩니다.</p>}
+                {hasUnlockedExtraPhotos && <p className="photoMileageGuide unlocked">✓ 추가 사진 열람 완료 · 이 대기방에서는 재차감 없음</p>}
+                {photoViewerNotice && <p className="photoViewerNotice" role="status">{photoViewerNotice}</p>}
+                {pendingPhotoIndex !== null && (
+                  <div className="photoUnlockConfirm" role="alertdialog" aria-modal="true" aria-labelledby="photo-unlock-title">
+                    <h3 id="photo-unlock-title">추가 사진을 볼까요?</h3>
+                    <p>보유 마일리지 <b>{mileageBalance}</b> 중 <strong>200 마일리지</strong>가 차감됩니다.</p>
+                    <div><button className="secondaryButton" type="button" onClick={() => setPendingPhotoIndex(null)}>취소</button><button className="primaryButton" type="button" onClick={unlockExtraProfilePhotos}>200 마일리지로 열기</button></div>
+                  </div>
+                )}
+              </section>
+            </div>
+          )}
         </section>
       )}
 
