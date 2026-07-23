@@ -245,6 +245,7 @@ export default function Home() {
     { from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." },
   ]);
   const [chatSeconds, setChatSeconds] = useState(3600);
+  const [chatEndedBy, setChatEndedBy] = useState<string | null>(null);
   const [friendStatus, setFriendStatus] = useState<"none" | "pending" | "friends">("friends");
   const [mileageBalance, setMileageBalance] = useState(800);
   const [rewardClaimed, setRewardClaimed] = useState(false);
@@ -427,12 +428,12 @@ export default function Home() {
   }, [screen]);
 
   useEffect(() => {
-    if (screen !== "private-chat" || chatSeconds <= 0) return;
+    if (screen !== "private-chat" || chatSeconds <= 0 || chatEndedBy) return;
     const timer = window.setInterval(() => {
       setChatSeconds((seconds) => Math.max(0, seconds - 1));
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [chatSeconds, screen]);
+  }, [chatEndedBy, chatSeconds, screen]);
 
   const resetAll = () => {
     setCurrentIndex(0);
@@ -465,6 +466,7 @@ export default function Home() {
     setChatInput("");
     setChatMessages([{ from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." }]);
     setChatSeconds(3600);
+    setChatEndedBy(null);
     setRewardClaimed(false);
     setMileageNotice("");
     setPendingChatFriendId(null);
@@ -623,7 +625,7 @@ export default function Home() {
   const sendChatMessage = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const message = chatInput.trim();
-    if (!message || chatSeconds <= 0) return;
+    if (!message || chatSeconds <= 0 || chatEndedBy) return;
     setChatMessages((messages) => [...messages, { from: "me", text: message }]);
     setChatInput("");
     window.setTimeout(() => {
@@ -645,9 +647,17 @@ export default function Home() {
   const openPrivateChat = (friendId = demoCouple[1].id) => {
     setActiveChatFriendId(friendId);
     setChatSeconds(3600);
+    setChatEndedBy(null);
     setChatInput("");
     setChatMessages([{ from: "system", text: "1시간 동안 둘만의 대화가 열렸어요. 편안하게 인사를 건네보세요." }]);
     transitionTo("private-chat");
+  };
+
+  const endPrivateChat = () => {
+    if (chatEndedBy) return;
+    const endingName = demoCouple[0].name;
+    setChatEndedBy(endingName);
+    setChatMessages((messages) => [...messages, { from: "system", text: `${endingName}님이 대화를 종료했습니다.` }]);
   };
 
   const requestFriend = () => {
@@ -1228,7 +1238,9 @@ export default function Home() {
             <button className="friendAddButton" type="button" disabled={friendStatus !== "none"} onClick={requestFriend}>
               {friendStatus === "none" ? "친구 추가" : friendStatus === "pending" ? "수락 대기 중" : "친구 ✓"}
             </button>
-            <button className="secondaryButton compactButton" onClick={() => transitionTo("landing")}>대화 종료</button>
+            {chatEndedBy
+              ? <button className="secondaryButton compactButton" onClick={() => transitionTo("friends")}>채팅방 나가기</button>
+              : <button className="secondaryButton compactButton" onClick={endPrivateChat}>대화 종료</button>}
           </header>
           <div className="chatMessages" aria-live="polite" aria-label="대화 내용">
             {chatMessages.map((message, index) => (
@@ -1236,13 +1248,15 @@ export default function Home() {
                 ? <p className="systemMessage" key={index}>{message.text}</p>
                 : <div className={`chatBubble ${message.from === "me" ? "mine" : "partner"}`} key={index}>{message.text}</div>
             ))}
-            {chatSeconds === 0 && <div className="chatExpired" role="status"><b>1시간 대화가 종료됐어요</b><p>친구가 되었다면 친구창에서 500 마일리지로 다시 대화할 수 있어요.</p></div>}
+            {chatEndedBy && <div className="chatExpired" role="status"><b>대화가 종료됐어요</b><p>상대방 화면에도 종료 메시지가 표시됩니다.</p></div>}
+            {chatSeconds === 0 && !chatEndedBy && <div className="chatExpired" role="status"><b>1시간 대화가 종료됐어요</b><p>친구가 되었다면 친구창에서 500 마일리지로 다시 대화할 수 있어요.</p></div>}
           </div>
           <form className="chatComposer" onSubmit={sendChatMessage}>
             <label className="srOnly" htmlFor="chat-message">메시지 입력</label>
             <input id="chat-message" value={chatInput} onChange={(event) => setChatInput(event.target.value)}
-              maxLength={200} autoComplete="off" placeholder="편안하게 첫 인사를 건네보세요" />
-            <button className="primaryButton" disabled={!chatInput.trim() || chatSeconds === 0} type="submit">보내기</button>
+              maxLength={200} autoComplete="off" disabled={chatSeconds === 0 || chatEndedBy !== null}
+              placeholder={chatEndedBy ? "종료된 대화입니다" : "편안하게 첫 인사를 건네보세요"} />
+            <button className="primaryButton" disabled={!chatInput.trim() || chatSeconds === 0 || chatEndedBy !== null} type="submit">보내기</button>
           </form>
           <p className="chatSafety">데모 메시지는 서버로 전송되지 않으며 새로고침하면 사라집니다. 연락처나 민감한 개인정보 공유는 신중히 결정해 주세요.</p>
         </section>
