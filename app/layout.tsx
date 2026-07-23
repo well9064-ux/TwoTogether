@@ -6,8 +6,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Heart Round — 6인 소셜 데이팅 게임",
-  description: "게임을 통해 첫인상과 취향을 알아가는 6인 소셜 데이팅 게임 프로토타입",
+  title: "Heart Round — 3:3 소셜 데이팅 게임",
+  description: "안전한 가입과 로비에서 시작해 게임으로 첫인상과 취향을 알아가는 3:3 소셜 데이팅 게임",
   icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 

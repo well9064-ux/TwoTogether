@@ -36,8 +36,8 @@ body {
 }
 
 button { font: inherit; }
-button, a, textarea { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visible {
+button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, canvas:focus-visible {
   outline: 3px solid #ffd166;
   outline-offset: 3px;
 }
@@ -100,6 +100,84 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visi
 .walkingRoad { position: absolute; left: 20px; right: 20px; bottom: 18px; height: 2px; background: linear-gradient(90deg, transparent, #6c6279, transparent); }
 @keyframes cuteWalk { to { transform: translateY(-7px) rotate(2deg); } }
 @keyframes heartFloat { 50% { transform: translate(-50%, -8px) scale(1.12); } }
+
+.authShell {
+  width: min(1180px, calc(100% - 40px));
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.1fr .8fr;
+  align-items: center;
+  gap: clamp(45px, 8vw, 120px);
+  margin: auto;
+  padding: 55px 0;
+}
+.authStory .authBrand { margin-bottom: 85px; }
+.authStory h1 { margin: 16px 0 25px; font-size: clamp(50px, 6vw, 80px); }
+.authStory > p:last-of-type { max-width: 560px; color: var(--muted); font-size: 16px; line-height: 1.8; }
+.authStory ul { display: grid; gap: 13px; margin: 34px 0 0; padding: 0; list-style: none; }
+.authStory li { display: flex; align-items: center; gap: 12px; color: #d9d2e2; font-size: 13px; }
+.authStory li span { color: #ff8eb0; font-size: 10px; font-weight: 900; letter-spacing: .12em; }
+.authCard {
+  padding: 38px;
+  background: linear-gradient(155deg, rgba(37,31,48,.98), rgba(22,19,29,.98));
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 26px;
+  box-shadow: 0 30px 100px rgba(0,0,0,.35);
+}
+.authCard h2 { margin: 8px 0 10px; font-size: 31px; }
+.authCard > p:not(.eyebrow, .authNotice) { margin: 0 0 25px; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.socialLogin { display: grid; gap: 9px; }
+.socialLogin button { min-height: 49px; display: grid; grid-template-columns: 30px 1fr 30px; align-items: center; padding: 0 15px; border: 0; border-radius: 12px; cursor: pointer; font-weight: 800; }
+.socialLogin button span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; font-size: 12px; font-weight: 900; }
+.socialLogin .kakao { color: #191600; background: #fee500; }.socialLogin .kakao span { background: rgba(0,0,0,.08); }
+.socialLogin .naver { color: white; background: #03c75a; }.socialLogin .naver span { background: rgba(0,0,0,.1); }
+.socialLogin .google { color: #28252d; background: white; }.socialLogin .google span { border: 1px solid #ddd; }
+.authDivider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: #776e82; font-size: 10px; }
+.authDivider::before, .authDivider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.authCard form { display: grid; gap: 10px; }
+.authCard form > label:not(.checkRow) { margin-top: 3px; color: #d8d1e2; font-size: 11px; font-weight: 800; }
+.authCard input:not([type="checkbox"]) { width: 100%; min-height: 49px; padding: 0 14px; color: white; background: #100e16; border: 1px solid var(--line); border-radius: 11px; font: inherit; }
+.authCard input:not([type="checkbox"])::placeholder { color: #655d70; }
+.authSubmit { width: 100%; margin-top: 6px; }
+.authFootnote { display: block; margin-top: 18px; color: #756d80; text-align: center; font-size: 9px; line-height: 1.6; }
+.authCenter { width: min(560px, calc(100% - 40px)); min-height: 100vh; display: grid; align-content: center; gap: 28px; margin: auto; padding: 45px 0; }
+.authCenter > .authBrand { justify-self: center; }
+.signupCard .checkRow { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 11px; margin-top: 8px; cursor: pointer; }
+.checkRow input { width: 19px; height: 19px; margin: 2px 0 0; accent-color: var(--pink); }
+.checkRow b, .checkRow small { display: block; }.checkRow b { font-size: 12px; }.checkRow small { margin-top: 4px; color: var(--muted); font-size: 9px; line-height: 1.5; }
+.textButton { padding: 7px 5px; color: #b7acc3; background: none; border: 0; cursor: pointer; font-size: 11px; font-weight: 800; text-decoration: underline; text-underline-offset: 4px; }
+.signupCard > .textButton { display: block; margin: 13px auto 0; }
+.verifyCard { text-align: center; }
+.verifyIcon { width: 72px; height: 72px; display: grid; place-items: center; margin: 0 auto 18px; color: white; background: linear-gradient(145deg, var(--pink), var(--violet)); border-radius: 50%; font-size: 31px; font-weight: 900; box-shadow: 0 12px 40px rgba(255,95,143,.25); }
+.dataPolicy { display: grid; gap: 8px; margin: 25px 0; text-align: left; }
+.dataPolicy div { padding: 13px 15px; background: #15121b; border: 1px solid var(--line); border-radius: 11px; }
+.dataPolicy span, .dataPolicy b { display: block; }.dataPolicy span { margin-bottom: 4px; color: #ff8fb1; font-size: 9px; font-weight: 900; }.dataPolicy b { font-size: 11px; line-height: 1.5; }
+.authNotice, .lobbyNotice { padding: 11px 14px; color: #ffe1a1; background: rgba(255,212,119,.08); border: 1px solid rgba(255,212,119,.22); border-radius: 11px; font-size: 11px; line-height: 1.5; }
+
+.lobbyScreen { width: min(1120px, calc(100% - 40px)); margin: auto; padding: 65px 0 90px; }
+.lobbyHero { display: flex; align-items: flex-end; justify-content: space-between; gap: 35px; }
+.lobbyHero h1 { margin: 9px 0 15px; font-size: clamp(42px, 5vw, 67px); }
+.lobbyHero > div:first-child > p:last-child { color: var(--muted); }
+.lobbyProfile { min-width: 305px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; padding: 17px; background: var(--panel); border: 1px solid var(--line); border-radius: 17px; }
+.lobbyProfile > .textButton { grid-column: 1 / -1; justify-self: end; padding: 0; }
+.lobbyAvatar { width: 47px; height: 47px; display: grid; place-items: center; color: white; background: linear-gradient(145deg, var(--pink), var(--violet)); border-radius: 50%; }
+.lobbyProfile b, .lobbyProfile small { display: block; }.lobbyProfile small { margin-top: 3px; color: var(--muted); font-size: 9px; }
+.lobbyProfile i { padding: 6px 8px; color: #d8a6a6; background: rgba(255,100,100,.08); border-radius: 99px; font-size: 9px; font-style: normal; font-weight: 900; }
+.lobbyProfile i.verified { color: #aef0d3; background: rgba(46,172,125,.14); }
+.lobbyNotice { margin: 25px 0 0; text-align: center; }
+.lobbyStats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 33px 0 48px; }
+.lobbyStats > div { display: flex; align-items: center; gap: 13px; padding: 16px 18px; background: rgba(25,22,36,.78); border: 1px solid var(--line); border-radius: 14px; }
+.lobbyStats > div > span { color: #ff82a9; font-size: 23px; }.lobbyStats p { margin: 0; color: var(--muted); font-size: 9px; }.lobbyStats b { display: block; margin-top: 3px; color: white; font-size: 17px; }
+.lobbyHeading { display: flex; align-items: end; justify-content: space-between; gap: 20px; margin-bottom: 20px; }.lobbyHeading h2 { font-size: 30px; }
+.roomGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.roomCard { padding: 22px; background: linear-gradient(150deg, #211c2a, #17141e); border: 1px solid var(--line); border-radius: 20px; }
+.roomTop { display: flex; align-items: center; justify-content: space-between; }.roomTop > span { color: #8e819b; font-size: 9px; font-weight: 900; letter-spacing: .14em; }.roomTop i { padding: 6px 8px; color: #ff95b5; background: rgba(255,105,151,.09); border-radius: 99px; font-size: 9px; font-style: normal; font-weight: 800; }
+.roomCard h3 { margin: 21px 0 8px; font-size: 19px; }.roomCard > p { min-height: 32px; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.seatRow { display: flex; gap: 5px; margin: 22px 0 12px; }.seatRow span { width: 30px; height: 30px; display: grid; place-items: center; color: #625a6d; background: #121017; border: 1px dashed #423b4b; border-radius: 50%; font-size: 10px; }.seatRow span.filled { color: white; background: linear-gradient(145deg, #e95d8a, #7b61d8); border: 0; }
+.roomMeta { display: flex; justify-content: space-between; margin-bottom: 17px; color: var(--muted); font-size: 10px; }.roomMeta b { color: #ddd5e6; }
+.roomCard > .primaryButton { width: 100%; padding-block: 13px; }
+.lobbySafety { display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 17px 20px; background: rgba(75,62,101,.15); border: 1px solid rgba(151,129,201,.2); border-radius: 15px; }
+.lobbySafety > span { font-size: 25px; }.lobbySafety > div { flex: 1; }.lobbySafety b, .lobbySafety p { display: block; margin: 0; }.lobbySafety p { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.5; }
 
 .landing {
   width: min(1180px, calc(100% - 48px));
@@ -360,6 +438,18 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .srOnly { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 @media (max-width: 800px) {
+  .authShell { display: block; padding-top: 30px; }
+  .authStory .authBrand { margin-bottom: 45px; }
+  .authStory h1 { font-size: 46px; }
+  .authStory ul { margin-bottom: 35px; }
+  .authCard { padding: 27px 22px; }
+  .lobbyHero { display: block; }
+  .lobbyProfile { min-width: 0; margin-top: 25px; }
+  .lobbyStats { grid-template-columns: 1fr; margin-bottom: 38px; }
+  .lobbyHeading { align-items: start; }
+  .lobbyHeading .secondaryButton { padding: 11px; font-size: 10px; }
+  .roomGrid { grid-template-columns: 1fr; }
+  .lobbySafety { align-items: start; }
   .landing { display: block; padding-top: 55px; }
   .orbit { width: 310px; height: 310px; margin: 70px auto 120px; justify-self: auto; }
   .orbitAvatar { width: 54px; height: 54px; }.orbitAvatar span { top: 58px; }

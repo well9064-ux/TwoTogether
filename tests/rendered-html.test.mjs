@@ -29,10 +29,11 @@ test("Heart Round 메인 화면을 서버 렌더링한다", async () => {
 
   const html = await response.text();
   assert.match(html, /<html lang="ko">/i);
-  assert.match(html, /<title>Heart Round/);
+  assert.match(html, /<title>Heart Round — 3:3/);
   assert.match(html, /HEART ROUND/);
-  assert.match(html, /데모 시작하기/);
-  assert.match(html, /PRIVATE BETA/);
+  assert.match(html, /간편하게 시작하기/);
+  assert.match(html, /카카오로 시작/);
+  assert.match(html, /게임 참가 전 휴대전화 본인·연령 확인/);
   assert.doesNotMatch(html, /codex-preview/);
   assert.doesNotMatch(html, /Your site is taking shape/);
 });

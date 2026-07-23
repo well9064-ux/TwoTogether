@@ -15,6 +15,7 @@ type Player = {
 };
 
 type Screen =
+  | "login" | "signup" | "verify" | "lobby"
   | "landing" | "signal" | "match-result"
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
   | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
@@ -212,7 +213,13 @@ const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour" |
 };
 
 export default function Home() {
-  const [screen, setScreen] = useState<Screen>("landing");
+  const [screen, setScreen] = useState<Screen>("login");
+  const [authEmail, setAuthEmail] = useState("");
+  const [nickname, setNickname] = useState("하트");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [authNotice, setAuthNotice] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [votes, setVotes] = useState<Record<string, string>>(initialVotes);
   const [quizIndex, setQuizIndex] = useState(0);
@@ -301,6 +308,27 @@ export default function Home() {
       ? "roundOne" : "roundTwo";
   const currentTrack = musicThemes[musicRound];
 
+  const enterLobby = (verified = isVerified) => {
+    setIsVerified(verified);
+    setAuthNotice(verified ? "휴대전화 본인·연령 확인이 완료됐어요." : "로비는 둘러볼 수 있지만 게임방 입장 전 인증이 필요해요.");
+    transitionTo("lobby");
+  };
+
+  const joinLobbyRoom = () => {
+    if (!isVerified) {
+      setAuthNotice("실제 참가자가 있는 게임방에 들어가려면 먼저 본인·연령 확인이 필요해요.");
+      transitionTo("verify");
+      return;
+    }
+    transitionTo("landing");
+  };
+
+  const logout = () => {
+    setIsVerified(false);
+    setAuthNotice("");
+    transitionTo("login");
+  };
+
   const ensureMusic = () => {
     const AudioContextClass = window.AudioContext
       ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -381,7 +409,14 @@ export default function Home() {
   useEffect(() => () => {
     if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
     const context = audioContextRef.current;
-    if (context && context.state !== "closed") void context.close().catch(() => undefined);
+    audioContextRef.current = null;
+    if (context && context.state !== "closed") {
+      try {
+        void context.close().catch(() => undefined);
+      } catch {
+        // 개발 모드의 이중 정리에서도 이미 닫힌 오디오 컨텍스트를 안전하게 무시합니다.
+      }
+    }
   }, []);
 
   const transitionTo = (nextScreen: Screen) => {
@@ -698,8 +733,8 @@ export default function Home() {
     <>
       <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
       <main id="main-content" aria-busy={isTransitioning}>
-      <header className="topbar">
-        <button className="brand" onClick={() => transitionTo("landing")} aria-label="처음 화면으로">
+      {!["login", "signup", "verify"].includes(screen) && <header className="topbar">
+        <button className="brand" onClick={() => transitionTo("lobby")} aria-label="로비로">
           <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
         <div className="topbarActions">
@@ -727,7 +762,7 @@ export default function Home() {
           </div>
           <span className="trackName" aria-live="polite">♬ {currentTrack.title}</span>
         </div>
-      </header>
+      </header>}
 
       {isTransitioning && (
         <div className="loadingOverlay" role="status" aria-live="polite">
@@ -738,6 +773,146 @@ export default function Home() {
           <b>둘만의 다음 장면으로 걸어가는 중…</b>
           <small>잠시만 기다려 주세요</small>
         </div>
+      )}
+
+      {screen === "login" && (
+        <section className="authShell" aria-labelledby="login-title">
+          <div className="authStory">
+            <button className="brand authBrand" type="button" onClick={() => transitionTo("login")}>
+              <span className="brandMark">♥</span><span>HEART ROUND</span>
+            </button>
+            <p className="eyebrow">3:3 SOCIAL GAME</p>
+            <h1 id="login-title">게임으로 만나고,<br /><em>대화로 이어져요</em></h1>
+            <p>취향 퀴즈와 팀 게임을 함께하며 자연스럽게 서로를 알아가는 프라이빗 베타입니다.</p>
+            <ul>
+              <li><span>01</span>로비 둘러보기는 간편 가입만으로</li>
+              <li><span>02</span>게임 참가 전 휴대전화 본인·연령 확인</li>
+              <li><span>03</span>연락처는 서비스가 요구하거나 공개하지 않음</li>
+            </ul>
+          </div>
+          <div className="authCard">
+            <p className="eyebrow">WELCOME</p>
+            <h2>간편하게 시작하기</h2>
+            <p>SNS 계정 또는 이메일 중 편한 방법을 골라주세요.</p>
+            <div className="socialLogin" aria-label="SNS 간편 가입">
+              <button type="button" className="kakao" onClick={() => transitionTo("signup")}><span>K</span>카카오로 시작</button>
+              <button type="button" className="naver" onClick={() => transitionTo("signup")}><span>N</span>네이버로 시작</button>
+              <button type="button" className="google" onClick={() => transitionTo("signup")}><span>G</span>Google로 시작</button>
+            </div>
+            <div className="authDivider"><span>또는 이메일</span></div>
+            <form onSubmit={(event) => { event.preventDefault(); if (authEmail.trim()) transitionTo("signup"); }}>
+              <label htmlFor="login-email">이메일</label>
+              <input id="login-email" type="email" required autoComplete="email" value={authEmail}
+                onChange={(event) => setAuthEmail(event.target.value)} placeholder="hello@example.com" />
+              <button className="primaryButton authSubmit" type="submit">이메일로 계속하기</button>
+            </form>
+            <small className="authFootnote">현재 데모에서는 실제 SNS 로그인이나 이메일 인증이 진행되지 않습니다.</small>
+          </div>
+        </section>
+      )}
+
+      {screen === "signup" && (
+        <section className="authCenter" aria-labelledby="signup-title">
+          <button className="brand authBrand" type="button" onClick={() => transitionTo("login")}>
+            <span className="brandMark">♥</span><span>HEART ROUND</span>
+          </button>
+          <div className="authCard signupCard">
+            <p className="eyebrow">STEP 1 OF 2</p>
+            <h2 id="signup-title">기본 프로필 만들기</h2>
+            <p>게임에 필요한 최소 정보만 받아요. 실명과 연락처는 프로필에 공개되지 않습니다.</p>
+            <form onSubmit={(event) => { event.preventDefault(); if (nickname.trim() && agreedToTerms && confirmedAdult) transitionTo("verify"); }}>
+              <label htmlFor="signup-nickname">닉네임</label>
+              <input id="signup-nickname" required maxLength={12} autoComplete="nickname" value={nickname}
+                onChange={(event) => setNickname(event.target.value)} />
+              <label className="checkRow">
+                <input type="checkbox" checked={confirmedAdult} onChange={(event) => setConfirmedAdult(event.target.checked)} />
+                <span><b>만 19세 이상입니다</b><small>베타 운영 정책상 성인만 참여할 수 있어요.</small></span>
+              </label>
+              <label className="checkRow">
+                <input type="checkbox" checked={agreedToTerms} onChange={(event) => setAgreedToTerms(event.target.checked)} />
+                <span><b>이용약관 및 개인정보 처리방침에 동의합니다</b><small>필수 동의와 선택 마케팅 동의는 실제 서비스에서 분리합니다.</small></span>
+              </label>
+              <button className="primaryButton authSubmit" type="submit"
+                disabled={!nickname.trim() || !agreedToTerms || !confirmedAdult}>가입하고 계속하기</button>
+            </form>
+            <button className="textButton" type="button" onClick={() => transitionTo("login")}>이전으로</button>
+          </div>
+        </section>
+      )}
+
+      {screen === "verify" && (
+        <section className="authCenter" aria-labelledby="verify-title">
+          <button className="brand authBrand" type="button" onClick={() => transitionTo("login")}>
+            <span className="brandMark">♥</span><span>HEART ROUND</span>
+          </button>
+          <div className="authCard verifyCard">
+            <span className="verifyIcon" aria-hidden="true">✓</span>
+            <p className="eyebrow">STEP 2 OF 2</p>
+            <h2 id="verify-title">안전한 만남을 위한 확인</h2>
+            <p>게임방 참가 전 한 번만 휴대전화로 본인과 성인 여부를 확인해요.</p>
+            <div className="dataPolicy">
+              <div><span>저장해요</span><b>인증 여부 · 연령대 · 중복가입 방지값</b></div>
+              <div><span>저장하지 않아요</span><b>주민등록번호 · 인증 문자 · 연락처 공개값</b></div>
+            </div>
+            {authNotice && <p className="authNotice" role="status">{authNotice}</p>}
+            <button className="primaryButton authSubmit" type="button" onClick={() => enterLobby(true)}>휴대전화 본인인증 데모</button>
+            <button className="secondaryButton authSubmit" type="button" onClick={() => enterLobby(false)}>인증 없이 로비 둘러보기</button>
+            <small className="authFootnote">실서비스에서는 전문 본인확인 기관의 인증창을 연결하고 원본 신원정보를 직접 보관하지 않습니다.</small>
+          </div>
+        </section>
+      )}
+
+      {screen === "lobby" && (
+        <section className="lobbyScreen">
+          <div className="lobbyHero">
+            <div>
+              <p className="eyebrow">HEART ROUND LOBBY</p>
+              <h1><em>{nickname}</em>님,<br />오늘의 인연을 만나볼까요?</h1>
+              <p>마음에 드는 방을 골라 3:3 게임을 시작해 보세요.</p>
+            </div>
+            <div className="lobbyProfile">
+              <span className="lobbyAvatar">♥</span>
+              <div><b>{nickname}</b><small>{isVerified ? "본인·성인 인증 완료" : "미인증 계정"}</small></div>
+              <i className={isVerified ? "verified" : ""}>{isVerified ? "인증 ✓" : "인증 필요"}</i>
+              <button className="textButton" type="button" onClick={logout}>로그아웃</button>
+            </div>
+          </div>
+          {authNotice && <p className="lobbyNotice" role="status">{authNotice}</p>}
+          <div className="lobbyStats" aria-label="현재 로비 현황">
+            <div><span>●</span><p>온라인<b>24명</b></p></div>
+            <div><span>♡</span><p>진행 중<b>5개 방</b></p></div>
+            <div><span>✦</span><p>내 마일리지<b>{mileageBalance}</b></p></div>
+          </div>
+          <div className="lobbyHeading">
+            <div><p className="eyebrow">LIVE ROOMS</p><h2>참가 가능한 게임방</h2></div>
+            <button className="secondaryButton" type="button" onClick={() => setAuthNotice("방 만들기는 다음 개발 단계에서 서버 매칭과 함께 연결할 예정이에요.")}>＋ 새 방 만들기</button>
+          </div>
+          <div className="roomGrid">
+            {[
+              { title: "퇴근 후 설레는 한 판", people: 4, tag: "초보 환영", time: "약 25분" },
+              { title: "취향부터 천천히", people: 2, tag: "대화 중심", time: "약 30분" },
+              { title: "주말의 인연", people: 5, tag: "곧 시작", time: "약 20분" },
+            ].map((room, index) => (
+              <article className="roomCard" key={room.title}>
+                <div className="roomTop"><span>ROOM 0{index + 1}</span><i>{room.tag}</i></div>
+                <h3>{room.title}</h3>
+                <p>사랑의 작대기 · 랜덤 미니게임 3개 · 최종 선택</p>
+                <div className="seatRow" aria-label={`6명 중 ${room.people}명 참가`}>
+                  {Array.from({ length: 6 }, (_, seat) => <span className={seat < room.people ? "filled" : ""} key={seat}>{seat < room.people ? "♥" : "+"}</span>)}
+                </div>
+                <div className="roomMeta"><b>{room.people} / 6명</b><span>{room.time}</span></div>
+                <button className="primaryButton" type="button" onClick={joinLobbyRoom}>
+                  {isVerified ? "참가하기" : "인증 후 참가하기"}
+                </button>
+              </article>
+            ))}
+          </div>
+          <aside className="lobbySafety">
+            <span aria-hidden="true">🛡</span>
+            <div><b>모두가 편안한 Heart Round</b><p>불쾌한 언행은 신고·차단할 수 있고, 연락처 공개는 요구하지 않습니다.</p></div>
+            <button className="textButton" type="button" onClick={() => setAuthNotice("신고·차단 및 운영자 검토 화면은 서버 기능과 함께 추가할 예정이에요.")}>안전 가이드</button>
+          </aside>
+        </section>
       )}
 
       {screen === "landing" && (
