@@ -25,8 +25,10 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /aria-pressed=\{musicStarted && !isMuted\}/);
   assert.match(page, /setIsMuted/);
   assert.match(page, /const musicThemes:/);
+  assert.match(page, /title: "첫눈에"/);
+  assert.match(page, /title: "우리의 대화"/);
   assert.match(page, /playVoice\(melodyNote \* 2/);
-  assert.match(page, /\[root, root \* 1\.25, root \* 1\.5\]/);
+  assert.match(page, /playVoice\(chord\[0\] \/ 2/);
   assert.match(page, /aria-label="볼륨 줄이기"/);
   assert.match(page, /aria-label="볼륨 키우기"/);
   assert.match(page, /Math\.max\(10, level - 10\)/);

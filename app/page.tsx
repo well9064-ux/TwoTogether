@@ -39,28 +39,30 @@ const initialVotes: Record<string, string> = {
 
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "최종 선택"];
 
-type MusicTheme = { melody: number[]; chordRoots: number[]; tempo: number };
+type MusicTheme = { title: string; melody: number[]; chords: number[][]; tempo: number };
 
-const musicThemes: Record<"lobby" | "signal" | "quiz" | "result", MusicTheme> = {
-  lobby: {
-    melody: [659.25, 783.99, 880, 987.77, 880, 783.99, 659.25, 587.33, 659.25, 783.99, 1046.5, 987.77, 880, 783.99, 659.25, 523.25],
-    chordRoots: [261.63, 220, 246.94, 196],
-    tempo: 340,
-  },
-  signal: {
-    melody: [587.33, 739.99, 880, 987.77, 1108.73, 987.77, 880, 739.99, 659.25, 830.61, 987.77, 1108.73, 987.77, 830.61, 739.99, 659.25],
-    chordRoots: [293.66, 246.94, 277.18, 220],
+const musicThemes: Record<"roundOne" | "roundTwo", MusicTheme> = {
+  roundOne: {
+    title: "첫눈에",
+    melody: [587.33, 659.25, 739.99, 880, 830.61, 739.99, 659.25, 587.33, 554.37, 659.25, 739.99, 987.77, 880, 830.61, 739.99, 659.25],
+    chords: [
+      [293.66, 369.99, 440],
+      [246.94, 293.66, 369.99],
+      [196, 246.94, 293.66],
+      [220, 277.18, 329.63],
+    ],
     tempo: 325,
   },
-  quiz: {
-    melody: [659.25, 783.99, 987.77, 783.99, 698.46, 880, 1046.5, 880, 783.99, 987.77, 1174.66, 987.77, 880, 783.99, 698.46, 587.33],
-    chordRoots: [261.63, 233.08, 293.66, 220],
+  roundTwo: {
+    title: "우리의 대화",
+    melody: [659.25, 783.99, 880, 987.77, 1046.5, 987.77, 880, 783.99, 698.46, 830.61, 987.77, 1174.66, 1046.5, 987.77, 880, 783.99],
+    chords: [
+      [261.63, 329.63, 392],
+      [220, 261.63, 329.63],
+      [174.61, 220, 261.63],
+      [196, 246.94, 293.66],
+    ],
     tempo: 300,
-  },
-  result: {
-    melody: [523.25, 659.25, 783.99, 1046.5, 987.77, 880, 783.99, 659.25, 587.33, 739.99, 880, 1174.66, 1046.5, 987.77, 880, 783.99],
-    chordRoots: [261.63, 293.66, 220, 246.94],
-    tempo: 350,
   },
 };
 
@@ -96,8 +98,9 @@ export default function Home() {
   );
   const demoCouple = mutualMatches[0] ?? [players[1], players[3]];
   const question = quizQuestions[quizIndex];
-  const musicRound = screen === "landing" ? "lobby" : screen === "signal" ? "signal"
-    : screen === "match-result" || screen === "quiz-result" ? "result" : "quiz";
+  const musicRound: keyof typeof musicThemes = screen === "landing" || screen === "signal" || screen === "match-result"
+    ? "roundOne" : "roundTwo";
+  const currentTrack = musicThemes[musicRound];
 
   const ensureMusic = () => {
     const AudioContextClass = window.AudioContext
@@ -145,12 +148,13 @@ export default function Home() {
       playVoice(melodyNote, now, 0.52, 0.045, "sine");
       playVoice(melodyNote * 2, now + 0.055, 0.28, 0.012, "triangle");
 
-      // 네 박마다 부드러운 장3화음을 깔아 단음 반복처럼 들리지 않게 합니다.
+      // 네 박마다 피아노 화음과 낮은 현악 베이스를 깔아 로맨틱 영화의 장면처럼 만듭니다.
       if (index % 4 === 0) {
-        const root = theme.chordRoots[Math.floor(index / 4) % theme.chordRoots.length];
-        [root, root * 1.25, root * 1.5].forEach((frequency, chordIndex) => {
-          playVoice(frequency, now + chordIndex * 0.018, 1.25, 0.012, "sine");
+        const chord = theme.chords[Math.floor(index / 4) % theme.chords.length];
+        chord.forEach((frequency, chordIndex) => {
+          playVoice(frequency, now + chordIndex * 0.025, 1.3, 0.013, "sine");
         });
+        playVoice(chord[0] / 2, now, 1.45, 0.01, "triangle");
       }
       index += 1;
     };
@@ -285,6 +289,7 @@ export default function Home() {
             <button type="button" onClick={() => setVolume((level) => Math.min(100, level + 10))}
               disabled={volume >= 100} aria-label="볼륨 키우기">＋</button>
           </div>
+          <span className="trackName" aria-live="polite">♬ {currentTrack.title}</span>
         </div>
       </header>
 

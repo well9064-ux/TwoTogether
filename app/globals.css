@@ -88,6 +88,7 @@ button:focus-visible, a:focus-visible, textarea:focus-visible, canvas:focus-visi
 .volumeControl button:hover:not(:disabled) { background: rgba(255,255,255,.08); }
 .volumeControl button:disabled { color: #5d5668; cursor: not-allowed; }
 .volumeControl span { min-width: 45px; color: var(--muted); text-align: center; font-size: 11px; }
+.trackName { max-width: 95px; overflow: hidden; color: #cfc5db; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .loadingOverlay { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; text-align: center; background: rgba(13,11,19,.94); backdrop-filter: blur(8px); }
 .loadingOverlay small { color: var(--muted); }
 .walkingScene { position: relative; width: 230px; height: 100px; margin-bottom: 15px; overflow: hidden; }
@@ -247,6 +248,7 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
   .soundButton { font-size: 0; }
   .soundButton span { font-size: 18px; }
   .volumeControl span { min-width: 38px; }
+  .trackName { display: none; }
   .guessLayout { grid-template-columns: 1fr; }
   .drawCanvas { height: 360px; }
   .mirrorCanvas { height: 280px; }
