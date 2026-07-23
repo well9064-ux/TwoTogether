@@ -21,6 +21,12 @@ type Screen =
   | "burger-intro" | "burger-play" | "burger-result";
 
 type Ingredient = "bun" | "patty" | "cheese" | "lettuce" | "tomato";
+type SideItem = "coffee" | "cola" | "cider" | "fries" | "applePie" | "nugget" | "squidRing";
+type KitchenOrder = {
+  id: number;
+  burger: { name: string; recipe: Ingredient[] };
+  sides: SideItem[];
+};
 
 const players: Player[] = [
   { id: "a1", name: "민준", age: 29, job: "서비스 기획자", intro: "좋은 카페와 느긋한 산책을 좋아해요.", interests: ["커피", "여행"], avatar: "민", color: "#7456f1", team: "A" },
@@ -103,6 +109,23 @@ const burgerOrders: { name: string; recipe: Ingredient[] }[] = [
   { name: "토마토 치즈", recipe: ["bun", "patty", "tomato", "cheese", "bun"] },
 ];
 
+const sideInfo: Record<SideItem, { label: string; icon: string }> = {
+  coffee: { label: "커피", icon: "☕" },
+  cola: { label: "콜라", icon: "🥤" },
+  cider: { label: "사이다", icon: "🫧" },
+  fries: { label: "감자튀김", icon: "🍟" },
+  applePie: { label: "애플파이", icon: "🥧" },
+  nugget: { label: "너겟", icon: "🍗" },
+  squidRing: { label: "오징어 링", icon: "⭕" },
+};
+
+const sideItems = Object.keys(sideInfo) as SideItem[];
+const makeKitchenOrder = (id: number): KitchenOrder => {
+  const sideCount = 3 + (id % 2);
+  const sides = Array.from({ length: sideCount }, (_, index) => sideItems[(id * 2 + index) % sideItems.length]);
+  return { id, burger: burgerOrders[id % burgerOrders.length], sides };
+};
+
 const initialVotes: Record<string, string> = {
   a1: "b2", a2: "b1", a3: "b3", b1: "a2", b2: "a3", b3: "a3",
 };
@@ -177,10 +200,13 @@ export default function Home() {
   const [compatHistory, setCompatHistory] = useState<boolean[]>([]);
   const [burgerTime, setBurgerTime] = useState(45);
   const [burgerScore, setBurgerScore] = useState(0);
-  const [burgerOrderIndex, setBurgerOrderIndex] = useState(0);
+  const [menuOrders, setMenuOrders] = useState<KitchenOrder[]>([]);
+  const [nextOrderNumber, setNextOrderNumber] = useState(4);
   const [burgerStack, setBurgerStack] = useState<Ingredient[]>([]);
-  const [bunStock, setBunStock] = useState(0);
-  const [pattyStock, setPattyStock] = useState(0);
+  const [burgerReady, setBurgerReady] = useState(false);
+  const [preparedSides, setPreparedSides] = useState<SideItem[]>([]);
+  const [burgerRoleIndex, setBurgerRoleIndex] = useState(0);
+  const [orderPassed, setOrderPassed] = useState(false);
   const [burgerMistakes, setBurgerMistakes] = useState(0);
   const [musicStarted, setMusicStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -207,7 +233,10 @@ export default function Home() {
   const drawerPlayer = demoCouple[quizIndex % 2];
   const guesserPlayer = demoCouple[(quizIndex + 1) % 2];
   const compatQuestion = compatibilityQuestions[compatIndex];
-  const burgerOrder = burgerOrders[burgerOrderIndex % burgerOrders.length];
+  const currentOrder = menuOrders[0];
+  const sidesReady = Boolean(currentOrder && preparedSides.length === currentOrder.sides.length);
+  const burgerPlayer = demoCouple[burgerRoleIndex];
+  const sidePlayer = demoCouple[(burgerRoleIndex + 1) % 2];
   const musicRound: keyof typeof musicThemes = screen.startsWith("burger-")
     ? "roundFour"
     : screen.startsWith("compat-") ? "roundThree"
@@ -279,7 +308,8 @@ export default function Home() {
 
   useEffect(() => () => {
     if (transitionTimerRef.current) window.clearTimeout(transitionTimerRef.current);
-    void audioContextRef.current?.close();
+    const context = audioContextRef.current;
+    if (context && context.state !== "closed") void context.close().catch(() => undefined);
   }, []);
 
   const transitionTo = (nextScreen: Screen) => {
@@ -343,10 +373,13 @@ export default function Home() {
     setCompatHistory([]);
     setBurgerTime(45);
     setBurgerScore(0);
-    setBurgerOrderIndex(0);
+    setMenuOrders([]);
+    setNextOrderNumber(4);
     setBurgerStack([]);
-    setBunStock(0);
-    setPattyStock(0);
+    setBurgerReady(false);
+    setPreparedSides([]);
+    setBurgerRoleIndex(0);
+    setOrderPassed(false);
     setBurgerMistakes(0);
     ensureMusic();
     transitionTo("signal");
@@ -447,33 +480,57 @@ export default function Home() {
   const startBurgerRound = () => {
     setBurgerTime(45);
     setBurgerScore(0);
-    setBurgerOrderIndex(0);
+    setMenuOrders([makeKitchenOrder(1), makeKitchenOrder(2), makeKitchenOrder(3)]);
+    setNextOrderNumber(4);
     setBurgerStack([]);
-    setBunStock(0);
-    setPattyStock(0);
+    setBurgerReady(false);
+    setPreparedSides([]);
+    setBurgerRoleIndex(Math.random() < 0.5 ? 0 : 1);
+    setOrderPassed(false);
     setBurgerMistakes(0);
     transitionTo("burger-play");
   };
 
+  const passKitchenOrder = () => {
+    setOrderPassed(true);
+    setBurgerScore((value) => value + 1);
+    window.setTimeout(() => {
+      setMenuOrders((orders) => [...orders.slice(1), makeKitchenOrder(nextOrderNumber)]);
+      setNextOrderNumber((number) => number + 1);
+      setBurgerStack([]);
+      setBurgerReady(false);
+      setPreparedSides([]);
+      setOrderPassed(false);
+    }, 850);
+  };
+
   const addBurgerIngredient = (ingredient: Ingredient) => {
-    if (ingredient === "bun" && bunStock < 1) return;
-    if (ingredient === "patty" && pattyStock < 1) return;
-    const expected = burgerOrder.recipe[burgerStack.length];
+    if (!currentOrder || burgerReady || orderPassed) return;
+    const expected = currentOrder.burger.recipe[burgerStack.length];
     if (ingredient !== expected) {
       setBurgerMistakes((count) => count + 1);
       setBurgerStack([]);
       return;
     }
-    if (ingredient === "bun") setBunStock((stock) => stock - 1);
-    if (ingredient === "patty") setPattyStock((stock) => stock - 1);
     const nextStack = [...burgerStack, ingredient];
-    if (nextStack.length === burgerOrder.recipe.length) {
-      setBurgerScore((value) => value + 1);
-      setBurgerOrderIndex((index) => index + 1);
-      setBurgerStack([]);
+    if (nextStack.length === currentOrder.burger.recipe.length) {
+      setBurgerStack(nextStack);
+      setBurgerReady(true);
+      if (sidesReady) passKitchenOrder();
       return;
     }
     setBurgerStack(nextStack);
+  };
+
+  const prepareSide = (side: SideItem) => {
+    if (!currentOrder || orderPassed || sidesReady) return;
+    if (!currentOrder.sides.includes(side) || preparedSides.includes(side)) {
+      setBurgerMistakes((count) => count + 1);
+      return;
+    }
+    const nextSides = [...preparedSides, side];
+    setPreparedSides(nextSides);
+    if (burgerReady && nextSides.length === currentOrder.sides.length) passKitchenOrder();
   };
 
   return (
@@ -813,46 +870,48 @@ export default function Home() {
       {screen === "burger-intro" && (
         <section className="burgerScreen burgerIntro">
           <p className="eyebrow">ROUND 04 · TEAMWORK</p>
-          <h2>둘이 함께<br /><em>버거 가게를 열어요</em></h2>
-          <p className="burgerLead">45초 동안 주문서에 적힌 순서대로 햄버거를 완성하세요.</p>
+          <h2>쌓이는 주문을<br /><em>둘이 함께 완성해요</em></h2>
+          <p className="burgerLead">한 사람은 햄버거, 한 사람은 사이드 메뉴를 맡습니다. 역할은 시작할 때 무작위로 정해져요.</p>
           <div className="roleCards">
             <article>
               <span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span>
-              <div><small>COOK</small><h3>{demoCouple[0].name}</h3><p>빵과 패티를 미리 준비해 주세요.</p></div>
+              <div><small>RANDOM ROLE</small><h3>{demoCouple[0].name}</h3><p>햄버거 또는 사이드 담당</p></div>
             </article>
-            <i>+</i>
+            <i>?</i>
             <article>
               <span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span>
-              <div><small>BUILDER</small><h3>{demoCouple[1].name}</h3><p>주문 순서대로 재료를 쌓아 주세요.</p></div>
+              <div><small>RANDOM ROLE</small><h3>{demoCouple[1].name}</h3><p>햄버거 또는 사이드 담당</p></div>
             </article>
           </div>
-          <p className="passDevice">데모에서는 한 화면에서 두 역할을 함께 조작합니다.</p>
+          <p className="passDevice">한 주문의 햄버거와 사이드가 모두 준비되어야 메뉴판이 통과됩니다.</p>
           <button className="primaryButton centerButton" onClick={startBurgerRound}>가게 문 열기 <span>→</span></button>
         </section>
       )}
 
-      {screen === "burger-play" && (
+      {screen === "burger-play" && currentOrder && (
         <section className="burgerScreen">
           <div className="burgerHud">
             <div><small>남은 시간</small><b aria-live="polite">{burgerTime}초</b></div>
             <div><small>완성 주문</small><b>{burgerScore}개</b></div>
             <div><small>실수</small><b>{burgerMistakes}회</b></div>
           </div>
+          <div className="menuBoard" aria-label="대기 중인 메뉴판">
+            {menuOrders.map((order, index) => (
+              <article className={`menuTicket ${index === 0 ? "active" : ""}`} key={order.id}>
+                <small>ORDER {String(order.id).padStart(2, "0")}</small>
+                <b>{order.burger.name}</b>
+                <span>{order.sides.map((side) => sideInfo[side].icon).join(" ")}</span>
+                {index === 0 && <em>NOW</em>}
+              </article>
+            ))}
+          </div>
+          {orderPassed && <div className="orderPassed" role="status"><span>✓</span><b>주문 통과!</b><small>다음 메뉴판을 준비하고 있어요</small></div>}
           <div className="burgerGame">
-            <article className="kitchenPanel cookPanel">
-              <div className="panelTitle"><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><div><small>COOK</small><h2>재료 준비</h2></div></div>
-              <p>조립 담당자가 사용할 빵과 패티를 준비하세요.</p>
-              <div className="cookButtons">
-                <button onClick={() => setBunStock((stock) => stock + 1)}><span>🍞</span>빵 굽기<b>{bunStock}개 준비</b></button>
-                <button onClick={() => setPattyStock((stock) => stock + 1)}><span>🥩</span>패티 굽기<b>{pattyStock}개 준비</b></button>
-              </div>
-            </article>
-
             <article className="orderPanel" aria-live="polite">
-              <small>ORDER {String(burgerOrderIndex + 1).padStart(2, "0")}</small>
-              <h2>{burgerOrder.name}</h2>
-              <div className="recipeStrip" aria-label={`${burgerOrder.name} 재료 순서`}>
-                {burgerOrder.recipe.map((ingredient, index) => (
+              <small>ORDER {String(currentOrder.id).padStart(2, "0")}</small>
+              <h2>{currentOrder.burger.name}</h2>
+              <div className="recipeStrip" aria-label={`${currentOrder.burger.name} 재료 순서`}>
+                {currentOrder.burger.recipe.map((ingredient, index) => (
                   <span className={index < burgerStack.length ? "done" : index === burgerStack.length ? "current" : ""} key={`${ingredient}-${index}`}>
                     {ingredientInfo[ingredient].icon}<small>{ingredientInfo[ingredient].label}</small>
                   </span>
@@ -861,19 +920,36 @@ export default function Home() {
               <div className="burgerBuild" aria-label="현재 쌓은 햄버거">
                 {burgerStack.length ? burgerStack.map((ingredient, index) => <span key={`${ingredient}-${index}`}>{ingredientInfo[ingredient].icon}</span>) : <p>첫 재료부터 쌓아 주세요</p>}
               </div>
+              <div className={`readyBadge ${burgerReady ? "ready" : ""}`}>{burgerReady ? "햄버거 준비 완료 ✓" : "햄버거 조립 중"}</div>
             </article>
 
             <article className="kitchenPanel builderPanel">
-              <div className="panelTitle"><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span><div><small>BUILDER</small><h2>버거 조립</h2></div></div>
+              <div className="panelTitle"><span style={{ background: burgerPlayer.color }}>{burgerPlayer.avatar}</span><div><small>BURGER</small><h2>{burgerPlayer.name} · 버거 조립</h2></div></div>
               <p>주문서의 왼쪽부터 재료를 선택하세요. 순서가 틀리면 다시 시작합니다.</p>
               <div className="ingredientButtons">
                 {(Object.keys(ingredientInfo) as Ingredient[]).map((ingredient) => (
                   <button key={ingredient} onClick={() => addBurgerIngredient(ingredient)}
-                    disabled={(ingredient === "bun" && bunStock < 1) || (ingredient === "patty" && pattyStock < 1)}>
+                    disabled={burgerReady || orderPassed}>
                     <span>{ingredientInfo[ingredient].icon}</span>{ingredientInfo[ingredient].label}
                   </button>
                 ))}
               </div>
+            </article>
+
+            <article className="kitchenPanel sidePanel">
+              <div className="panelTitle"><span style={{ background: sidePlayer.color }}>{sidePlayer.avatar}</span><div><small>SIDE</small><h2>{sidePlayer.name} · 사이드 준비</h2></div></div>
+              <p>메뉴판에 포함된 사이드 3~4개를 찾아 준비하세요.</p>
+              <div className="sideOrderList">
+                {currentOrder.sides.map((side) => <span className={preparedSides.includes(side) ? "done" : ""} key={side}>{sideInfo[side].icon} {sideInfo[side].label}</span>)}
+              </div>
+              <div className="ingredientButtons sideButtons">
+                {sideItems.map((side) => (
+                  <button key={side} onClick={() => prepareSide(side)} disabled={preparedSides.includes(side) || orderPassed}>
+                    <span>{sideInfo[side].icon}</span>{sideInfo[side].label}
+                  </button>
+                ))}
+              </div>
+              <div className={`readyBadge ${sidesReady ? "ready" : ""}`}>{sidesReady ? "사이드 준비 완료 ✓" : `${preparedSides.length} / ${currentOrder.sides.length} 준비`}</div>
             </article>
           </div>
           <button className="secondaryButton centerButton" onClick={() => transitionTo("burger-result")}>라운드 마치기</button>
@@ -883,7 +959,7 @@ export default function Home() {
       {screen === "burger-result" && (
         <section className="resultScreen quizFinal">
           <p className="eyebrow">ROUND 04 · COMPLETE</p>
-          <h2>함께 완성한 버거는<br /><em>{burgerScore}개</em></h2>
+          <h2>함께 통과시킨 주문은<br /><em>{burgerScore}개</em></h2>
           <div className="teamResult" aria-live="polite">
             <span>♥</span>
             <p>{burgerScore >= 5 ? "말하지 않아도 손발이 척척 맞는 환상의 주방 팀이에요!" : burgerScore >= 2 ? "역할을 나누니 점점 호흡이 좋아지고 있어요!" : "첫 영업은 연습이죠. 서로 신호를 맞춰 다시 도전해 보세요!"}</p>

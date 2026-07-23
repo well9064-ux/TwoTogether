@@ -34,7 +34,12 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /title: "달콤한 주방"/);
   assert.match(page, /setBurgerTime\(\(time\) =>/);
   assert.match(page, /aria-label="현재 쌓은 햄버거"/);
-  assert.match(page, /disabled=\{\(ingredient === "bun"/);
+  assert.match(page, /type KitchenOrder/);
+  assert.match(page, /const sideInfo:/);
+  assert.match(page, /setBurgerRoleIndex\(Math\.random\(\) < 0\.5 \? 0 : 1\)/);
+  assert.match(page, /aria-label="대기 중인 메뉴판"/);
+  assert.match(page, /role="status"><span>✓<\/span><b>주문 통과!/);
+  assert.match(page, /currentOrder\.sides\.includes\(side\)/);
   assert.match(page, /disabled=\{!drawerAnswer\.trim\(\)\}/);
   assert.match(page, /disabled=\{!textHint\.trim\(\)\}/);
   assert.doesNotMatch(page, /question\.answer/);

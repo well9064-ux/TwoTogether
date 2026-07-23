@@ -276,7 +276,13 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .burgerHud { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
 .burgerHud > div { padding: 14px 18px; text-align: center; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
 .burgerHud small { display: block; color: var(--muted); font-size: 11px; }.burgerHud b { display: block; margin-top: 4px; color: #ffb56e; font-size: 23px; }
-.burgerGame { display: grid; grid-template-columns: .8fr 1.25fr .8fr; gap: 15px; align-items: stretch; }
+.menuBoard { display: flex; align-items: stretch; gap: 10px; margin-bottom: 16px; overflow-x: auto; padding: 4px 2px 8px; }
+.menuTicket { position: relative; flex: 0 0 210px; display: grid; gap: 5px; padding: 14px 16px; opacity: .55; background: #211d2a; border: 1px dashed #61596c; border-radius: 8px 8px 16px 16px; }
+.menuTicket.active { opacity: 1; background: #fff6e7; border-color: #ffb56e; color: #33291f; box-shadow: 0 8px 25px rgba(0,0,0,.25); }
+.menuTicket small { font-size: 9px; font-weight: 900; letter-spacing: .13em; }.menuTicket span { font-size: 18px; }.menuTicket em { position: absolute; top: 10px; right: 10px; color: #d05c20; font-size: 9px; font-style: normal; font-weight: 900; }
+.orderPassed { position: fixed; z-index: 30; top: 50%; left: 50%; min-width: 280px; padding: 28px; transform: translate(-50%, -50%); text-align: center; color: #143e2e; background: #dbffef; border: 3px solid #2eac7d; border-radius: 22px; box-shadow: 0 25px 80px rgba(0,0,0,.5); }
+.orderPassed span, .orderPassed b, .orderPassed small { display: block; }.orderPassed span { font-size: 38px; }.orderPassed b { margin: 5px 0; font-size: 28px; }.orderPassed small { color: #39725d; }
+.burgerGame { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 15px; align-items: stretch; }
 .kitchenPanel, .orderPanel { padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 20px; }
 .panelTitle { display: flex; align-items: center; gap: 14px; }.panelTitle > span { width: 48px; height: 48px; font-size: 16px; }
 .panelTitle h2 { font-size: 21px; }.kitchenPanel > p { min-height: 42px; color: var(--muted); font-size: 12px; line-height: 1.55; }
@@ -293,6 +299,13 @@ h1 em, h2 em { color: #ff6f9b; font-style: normal; }
 .recipeStrip > span small { color: var(--muted); font-size: 9px; }.recipeStrip > span.current { opacity: 1; border-color: #ffb56e; box-shadow: 0 0 0 3px rgba(255,181,110,.12); }.recipeStrip > span.done { opacity: .8; background: rgba(46,172,125,.17); border-color: #2eac7d; }
 .burgerBuild { min-height: 245px; display: flex; flex-direction: column-reverse; align-items: center; justify-content: center; gap: 0; margin-top: 20px; padding: 18px; background: #15121b; border-radius: 16px; }
 .burgerBuild span { height: 39px; font-size: 38px; line-height: 1; filter: drop-shadow(0 4px 5px rgba(0,0,0,.25)); }.burgerBuild p { color: #625a6d; font-size: 13px; }
+.readyBadge { margin-top: 14px; padding: 9px 12px; color: var(--muted); text-align: center; background: #211d2a; border-radius: 9px; font-size: 11px; font-weight: 900; }
+.readyBadge.ready { color: #baf5da; background: rgba(46,172,125,.2); }
+.sideOrderList { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.sideOrderList span { padding: 6px 8px; color: #d9d1e2; background: #26212f; border: 1px solid var(--line); border-radius: 8px; font-size: 10px; }
+.sideOrderList span.done { color: #baf5da; text-decoration: line-through; border-color: #2eac7d; background: rgba(46,172,125,.15); }
+.sideButtons { grid-template-columns: repeat(3, 1fr); }
+.sideButtons button { padding-inline: 5px; font-size: 10px; }
 .teamResult { max-width: 620px; margin: 28px auto; padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; }
 .teamResult span { color: #ffb56e; font-size: 30px; }.teamResult p { margin: 10px 0 0; color: #ded8e8; line-height: 1.6; }
 
