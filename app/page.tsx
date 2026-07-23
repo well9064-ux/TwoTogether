@@ -39,11 +39,29 @@ const initialVotes: Record<string, string> = {
 
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "최종 선택"];
 
-const musicPatterns: Record<"lobby" | "signal" | "quiz" | "result", number[]> = {
-  lobby: [261.63, 329.63, 392, 329.63],
-  signal: [293.66, 369.99, 440, 369.99, 329.63, 392],
-  quiz: [329.63, 392, 493.88, 440, 392, 369.99],
-  result: [261.63, 329.63, 392, 523.25, 392, 329.63],
+type MusicTheme = { melody: number[]; chordRoots: number[]; tempo: number };
+
+const musicThemes: Record<"lobby" | "signal" | "quiz" | "result", MusicTheme> = {
+  lobby: {
+    melody: [659.25, 783.99, 880, 987.77, 880, 783.99, 659.25, 587.33, 659.25, 783.99, 1046.5, 987.77, 880, 783.99, 659.25, 523.25],
+    chordRoots: [261.63, 220, 246.94, 196],
+    tempo: 340,
+  },
+  signal: {
+    melody: [587.33, 739.99, 880, 987.77, 1108.73, 987.77, 880, 739.99, 659.25, 830.61, 987.77, 1108.73, 987.77, 830.61, 739.99, 659.25],
+    chordRoots: [293.66, 246.94, 277.18, 220],
+    tempo: 325,
+  },
+  quiz: {
+    melody: [659.25, 783.99, 987.77, 783.99, 698.46, 880, 1046.5, 880, 783.99, 987.77, 1174.66, 987.77, 880, 783.99, 698.46, 587.33],
+    chordRoots: [261.63, 233.08, 293.66, 220],
+    tempo: 300,
+  },
+  result: {
+    melody: [523.25, 659.25, 783.99, 1046.5, 987.77, 880, 783.99, 659.25, 587.33, 739.99, 880, 1174.66, 1046.5, 987.77, 880, 783.99],
+    chordRoots: [261.63, 293.66, 220, 246.94],
+    tempo: 350,
+  },
 };
 
 export default function Home() {
@@ -96,27 +114,49 @@ export default function Home() {
     if (!musicStarted || isMuted) return;
     const context = audioContextRef.current;
     if (!context) return;
-    const notes = musicPatterns[musicRound];
+    const theme = musicThemes[musicRound];
     let index = 0;
 
-    const playNote = () => {
-      const now = context.currentTime;
+    const playVoice = (
+      frequency: number,
+      start: number,
+      duration: number,
+      peak: number,
+      type: OscillatorType,
+    ) => {
       const oscillator = context.createOscillator();
       const gain = context.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.value = notes[index % notes.length];
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.07 * (volume / 100), now + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+      oscillator.type = type;
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(peak * (volume / 100), start + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
       oscillator.connect(gain);
       gain.connect(context.destination);
-      oscillator.start(now);
-      oscillator.stop(now + 0.58);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.03);
+    };
+
+    const playSparkle = () => {
+      const now = context.currentTime;
+      const melodyNote = theme.melody[index % theme.melody.length];
+
+      // 짧은 벨과 한 옥타브 위의 잔향을 겹쳐 반짝이는 하프 느낌을 냅니다.
+      playVoice(melodyNote, now, 0.52, 0.045, "sine");
+      playVoice(melodyNote * 2, now + 0.055, 0.28, 0.012, "triangle");
+
+      // 네 박마다 부드러운 장3화음을 깔아 단음 반복처럼 들리지 않게 합니다.
+      if (index % 4 === 0) {
+        const root = theme.chordRoots[Math.floor(index / 4) % theme.chordRoots.length];
+        [root, root * 1.25, root * 1.5].forEach((frequency, chordIndex) => {
+          playVoice(frequency, now + chordIndex * 0.018, 1.25, 0.012, "sine");
+        });
+      }
       index += 1;
     };
 
-    playNote();
-    const timer = window.setInterval(playNote, 680);
+    playSparkle();
+    const timer = window.setInterval(playSparkle, theme.tempo);
     return () => window.clearInterval(timer);
   }, [musicRound, musicStarted, isMuted, volume]);
 
