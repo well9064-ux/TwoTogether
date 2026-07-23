@@ -120,7 +120,9 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /makePrimaryProfilePhoto/);
   assert.match(page, /removeProfilePhoto/);
   assert.match(page, /대표로 선택/);
-  assert.match(page, /aria-pressed=\{index === 0\}/);
+  assert.match(page, /const \[primaryProfilePhotoIndex, setPrimaryProfilePhotoIndex\]/);
+  assert.match(page, /aria-pressed=\{index === primaryProfilePhotoIndex\}/);
+  assert.match(page, /setPrimaryProfilePhotoIndex\(index\)/);
   assert.match(page, /id="profile-name"/);
   assert.match(page, /id="profile-age"/);
   assert.match(page, /id="profile-region"/);

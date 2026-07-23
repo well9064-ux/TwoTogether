@@ -268,6 +268,7 @@ export default function Home() {
   const [profileJob, setProfileJob] = useState("서비스 기획자");
   const [profileIntro, setProfileIntro] = useState("좋은 대화와 맛있는 음식을 좋아해요.");
   const [profilePhotos, setProfilePhotos] = useState<string[]>([]);
+  const [primaryProfilePhotoIndex, setPrimaryProfilePhotoIndex] = useState(0);
   const [profileReturn, setProfileReturn] = useState<"verify" | "lobby">("verify");
   const [isReady, setIsReady] = useState(false);
   const [roomTitle, setRoomTitle] = useState("");
@@ -347,7 +348,7 @@ export default function Home() {
   const transitionTimerRef = useRef<number | null>(null);
 
   const current = players[currentIndex];
-  const profilePhoto = profilePhotos[0] ?? "";
+  const profilePhoto = profilePhotos[primaryProfilePhotoIndex] ?? profilePhotos[0] ?? "";
   const candidates = players.filter((player) => player.team !== current.team);
   const mutualMatches = useMemo(
     () => players
@@ -543,10 +544,15 @@ export default function Home() {
 
   const removeProfilePhoto = (index: number) => {
     setProfilePhotos((photos) => photos.filter((_, photoIndex) => photoIndex !== index));
+    if (index === primaryProfilePhotoIndex) {
+      setPrimaryProfilePhotoIndex(0);
+    } else if (index < primaryProfilePhotoIndex) {
+      setPrimaryProfilePhotoIndex((currentIndex) => currentIndex - 1);
+    }
   };
 
   const makePrimaryProfilePhoto = (index: number) => {
-    setProfilePhotos((photos) => [photos[index], ...photos.filter((_, photoIndex) => photoIndex !== index)]);
+    setPrimaryProfilePhotoIndex(index);
   };
 
   const previewChatImage = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1097,15 +1103,15 @@ export default function Home() {
               <div className="photoField">
                 <div className="profilePhotoGallery" aria-label={`등록한 프로필 사진 ${profilePhotos.length}장`}>
                   {profilePhotos.map((photo, index) => (
-                    <div className={`profilePhotoItem ${index === 0 ? "primary" : ""}`} key={`${photo.slice(-24)}-${index}`}>
+                    <div className={`profilePhotoItem ${index === primaryProfilePhotoIndex ? "primary" : ""}`} key={`${photo.slice(-24)}-${index}`}>
                       <button type="button" onClick={() => makePrimaryProfilePhoto(index)} aria-label={`${index + 1}번 사진을 대표 사진으로 설정`}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`프로필 사진 ${index + 1}${index === 0 ? ", 대표 사진" : ""}`} />
-                        {index === 0 && <b>대표</b>}
+                        <img src={photo} alt={`프로필 사진 ${index + 1}${index === primaryProfilePhotoIndex ? ", 대표 사진" : ""}`} />
+                        {index === primaryProfilePhotoIndex && <b>대표</b>}
                       </button>
                       <button className="removePhotoButton" type="button" onClick={() => removeProfilePhoto(index)} aria-label={`${index + 1}번 프로필 사진 삭제`}>×</button>
-                      <button className={`primaryPhotoButton ${index === 0 ? "selected" : ""}`} type="button" onClick={() => makePrimaryProfilePhoto(index)}
-                        aria-pressed={index === 0}>{index === 0 ? "대표 사진 ✓" : "대표로 선택"}</button>
+                      <button className={`primaryPhotoButton ${index === primaryProfilePhotoIndex ? "selected" : ""}`} type="button" onClick={() => makePrimaryProfilePhoto(index)}
+                        aria-pressed={index === primaryProfilePhotoIndex}>{index === primaryProfilePhotoIndex ? "대표 사진 ✓" : "대표로 선택"}</button>
                     </div>
                   ))}
                   {Array.from({ length: 3 - profilePhotos.length }, (_, index) => <span className="emptyPhotoSlot" key={index} aria-hidden="true">＋</span>)}
@@ -1113,7 +1119,7 @@ export default function Home() {
                 <div className="photoUploadActions">
                   <label className="photoUpload" htmlFor="profile-photo">{profilePhotos.length ? "사진 추가" : "사진 선택"}</label>
                   <input id="profile-photo" className="srOnly" type="file" multiple accept="image/png,image/jpeg,image/webp" onChange={previewProfilePhoto} disabled={profilePhotos.length >= 3} />
-                  <small>최대 3장 · 사진별 5MB · 첫 번째 사진이 대표 사진입니다.</small>
+                  <small>최대 3장 · 사진별 5MB · 사진 위치는 그대로 유지됩니다.</small>
                   <span>{profilePhotos.length} / 3장</span>
                 </div>
               </div>
