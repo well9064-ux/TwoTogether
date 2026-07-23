@@ -44,6 +44,18 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /title: "우리가 주인공"/);
   assert.match(page, /musicRound === "roundFive"/);
   assert.match(page, /"sawtooth"/);
+  assert.match(page, /const medalInfo =/);
+  assert.match(page, /🥇/);
+  assert.match(page, /🥈/);
+  assert.match(page, /🥉/);
+  assert.match(page, /"final-choice-first"/);
+  assert.match(page, /"final-choice-second"/);
+  assert.match(page, /"final-reveal"/);
+  assert.match(page, /"private-chat"/);
+  assert.match(page, /title: "둘만의 고요한 밤"/);
+  assert.match(page, /aria-label="대화 내용"/);
+  assert.match(page, /htmlFor="chat-message"/);
+  assert.match(page, /데모 메시지는 서버로 전송되지 않으며/);
   assert.match(page, /const finalRanking =/);
   assert.match(page, /aria-label="최종 커플 순위"/);
   assert.match(page, /각자 <b>\{mileage\} 마일리지/);

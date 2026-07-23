@@ -19,7 +19,7 @@ type Screen =
   | "quiz-intro" | "draw" | "guess" | "quiz-result"
   | "compat-intro" | "compat-first" | "compat-second" | "compat-reveal" | "compat-result"
   | "burger-intro" | "burger-play" | "burger-result"
-  | "final-result";
+  | "final-result" | "final-choice-first" | "final-choice-second" | "final-reveal" | "private-chat";
 
 type Ingredient = "bun" | "patty" | "cheese" | "lettuce" | "tomato";
 type SideItem = "coffee" | "cola" | "cider" | "fries" | "applePie" | "nugget" | "squidRing";
@@ -132,10 +132,15 @@ const initialVotes: Record<string, string> = {
 };
 
 const stages = ["첫인상", "취향 퀴즈", "상황 궁합", "버거 팀워크", "최종 선택"];
+const medalInfo = [
+  { icon: "🥇", label: "금메달" },
+  { icon: "🥈", label: "은메달" },
+  { icon: "🥉", label: "동메달" },
+];
 
 type MusicTheme = { title: string; melody: number[]; chords: number[][]; tempo: number };
 
-const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour" | "roundFive", MusicTheme> = {
+const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour" | "roundFive" | "roundSix", MusicTheme> = {
   roundOne: {
     title: "첫눈에",
     melody: [587.33, 659.25, 739.99, 880, 830.61, 739.99, 659.25, 587.33, 554.37, 659.25, 739.99, 987.77, 880, 830.61, 739.99, 659.25],
@@ -191,6 +196,17 @@ const musicThemes: Record<"roundOne" | "roundTwo" | "roundThree" | "roundFour" |
     ],
     tempo: 230,
   },
+  roundSix: {
+    title: "둘만의 고요한 밤",
+    melody: [392, 440, 493.88, 523.25, 493.88, 440, 392, 329.63, 349.23, 392, 440, 493.88, 440, 392, 349.23, 329.63],
+    chords: [
+      [196, 246.94, 293.66],
+      [174.61, 220, 261.63],
+      [164.81, 196, 246.94],
+      [146.83, 185, 220],
+    ],
+    tempo: 520,
+  },
 };
 
 export default function Home() {
@@ -220,6 +236,12 @@ export default function Home() {
   const [burgerRoleIndex, setBurgerRoleIndex] = useState(0);
   const [orderPassed, setOrderPassed] = useState(false);
   const [burgerMistakes, setBurgerMistakes] = useState(0);
+  const [finalFirstChoice, setFinalFirstChoice] = useState<boolean | null>(null);
+  const [finalSecondChoice, setFinalSecondChoice] = useState<boolean | null>(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState([
+    { from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." },
+  ]);
   const [musicStarted, setMusicStarted] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(60);
@@ -257,6 +279,8 @@ export default function Home() {
   ].sort((left, right) => right.score - left.score);
   const musicRound: keyof typeof musicThemes = screen === "final-result"
     ? "roundFive"
+    : screen.startsWith("final-") || screen === "private-chat"
+      ? "roundSix"
     : screen.startsWith("burger-")
     ? "roundFour"
     : screen.startsWith("compat-") ? "roundThree"
@@ -306,7 +330,11 @@ export default function Home() {
       const now = context.currentTime;
       const melodyNote = theme.melody[index % theme.melody.length];
 
-      if (musicRound === "roundFive") {
+      if (musicRound === "roundSix") {
+        // 대화를 방해하지 않는 낮은 음량의 피아노와 부드러운 패드입니다.
+        playVoice(melodyNote, now, 0.9, 0.018, "sine");
+        playVoice(melodyNote / 2, now, 1.05, 0.007, "triangle");
+      } else if (musicRound === "roundFive") {
         // 시상식 팡파르처럼 선명한 브라스 선율과 힘 있는 저음을 겹칩니다.
         playVoice(melodyNote, now, 0.42, 0.085, "triangle");
         playVoice(melodyNote / 2, now, 0.38, 0.032, "sawtooth");
@@ -318,12 +346,16 @@ export default function Home() {
       }
 
       // 네 박마다 메이저 화음과 낮은 베이스를 더해 장면을 크게 받쳐 줍니다.
-      if (index % 4 === 0) {
-        const chord = theme.chords[Math.floor(index / 4) % theme.chords.length];
+      const chordInterval = musicRound === "roundSix" ? 8 : 4;
+      if (index % chordInterval === 0) {
+        const chord = theme.chords[Math.floor(index / chordInterval) % theme.chords.length];
         chord.forEach((frequency, chordIndex) => {
-          playVoice(frequency, now + chordIndex * 0.025, musicRound === "roundFive" ? 0.85 : 1.3, musicRound === "roundFive" ? 0.032 : 0.013, musicRound === "roundFive" ? "triangle" : "sine");
+          const duration = musicRound === "roundSix" ? 1.8 : musicRound === "roundFive" ? 0.85 : 1.3;
+          const peak = musicRound === "roundSix" ? 0.005 : musicRound === "roundFive" ? 0.032 : 0.013;
+          playVoice(frequency, now + chordIndex * 0.025, duration, peak, musicRound === "roundFive" ? "triangle" : "sine");
         });
-        playVoice(chord[0] / 2, now, 1.1, musicRound === "roundFive" ? 0.035 : 0.01, musicRound === "roundFive" ? "sawtooth" : "triangle");
+        const bassPeak = musicRound === "roundSix" ? 0.004 : musicRound === "roundFive" ? 0.035 : 0.01;
+        playVoice(chord[0] / 2, now, musicRound === "roundSix" ? 1.9 : 1.1, bassPeak, musicRound === "roundFive" ? "sawtooth" : "triangle");
       }
       index += 1;
     };
@@ -408,6 +440,10 @@ export default function Home() {
     setBurgerRoleIndex(0);
     setOrderPassed(false);
     setBurgerMistakes(0);
+    setFinalFirstChoice(null);
+    setFinalSecondChoice(null);
+    setChatInput("");
+    setChatMessages([{ from: "system", text: "서로의 마음이 통했어요. 편안하게 대화를 시작해 보세요." }]);
     ensureMusic();
     transitionTo("signal");
   };
@@ -560,6 +596,17 @@ export default function Home() {
     if (burgerReady && nextSides.length === currentOrder.sides.length) passKitchenOrder();
   };
 
+  const sendChatMessage = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const message = chatInput.trim();
+    if (!message) return;
+    setChatMessages((messages) => [...messages, { from: "me", text: message }]);
+    setChatInput("");
+    window.setTimeout(() => {
+      setChatMessages((messages) => [...messages, { from: "partner", text: "나도 오늘 정말 즐거웠어. 천천히 더 이야기해 보자 😊" }]);
+    }, 700);
+  };
+
   return (
     <>
       <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
@@ -608,7 +655,7 @@ export default function Home() {
             <p className="heroDescription">6명이 함께하는 소셜 게임. 첫인상부터 취향과 가치관까지 자연스럽게 알아가세요.</p>
             <div className="heroActions">
               <button className="primaryButton" onClick={resetAll}>데모 시작하기 <span>→</span></button>
-              <span className="sessionInfo"><b>4개 라운드</b><small>첫인상 + 취향 + 궁합 + 팀워크</small></span>
+              <span className="sessionInfo"><b>5개 단계</b><small>첫인상부터 최종 선택까지</small></span>
             </div>
           </div>
           <div className="orbit" aria-label="참가자 6명">
@@ -621,7 +668,7 @@ export default function Home() {
           </div>
           <div className="stageStrip">
             {stages.map((stage, index) => (
-              <div className={`stageItem ${index < 4 ? "available" : ""}`} key={stage} aria-current={index === 0 ? "step" : undefined}>
+              <div className={`stageItem ${index < 5 ? "available" : ""}`} key={stage} aria-current={index === 0 ? "step" : undefined}>
                 <span>0{index + 1}</span><b>{stage}</b>{index < stages.length - 1 && <i>—</i>}
               </div>
             ))}
@@ -1011,7 +1058,7 @@ export default function Home() {
               const mileage = [300, 200, 100][index];
               return (
                 <article className={`podiumCard rank${index + 1} ${entry.isOurs ? "ourCouple" : ""}`} key={`${entry.couple[0].id}-${entry.couple[1].id}`}>
-                  <div className="rankBadge"><span>{index + 1}</span><small>{index === 0 ? "WINNER" : "PLACE"}</small></div>
+                  <div className="rankBadge" aria-label={`${index + 1}등 ${medalInfo[index].label}`}><span>{medalInfo[index].icon}</span><small>{medalInfo[index].label}</small></div>
                   <div className="rankingCouple">
                     <div><span style={{ background: entry.couple[0].color }}>{entry.couple[0].avatar}</span><b>{entry.couple[0].name}</b></div>
                     <i>♥</i>
@@ -1030,11 +1077,86 @@ export default function Home() {
             <div><span>03</span><p>상황 궁합<b>{compatScore} / {compatibilityQuestions.length}</b></p></div>
             <div><span>04</span><p>팀워크 주문<b>{burgerScore}개</b></p></div>
           </div>
-          <p className="nextRoundNotice">다음 단계에서는 서로의 최종 호감을 확인하고, 마음이 통하면 1:1 대화를 시작할 수 있어요.</p>
+          <p className="nextRoundNotice">이제 서로의 최종 호감을 비공개로 선택합니다. 두 사람의 마음이 같을 때만 1:1 대화가 열려요.</p>
           <div className="resultActions">
             <button className="secondaryButton" onClick={() => transitionTo("burger-intro")}>팀워크 다시 하기</button>
-            <button className="primaryButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
+            <button className="primaryButton" onClick={() => { setFinalFirstChoice(null); setFinalSecondChoice(null); transitionTo("final-choice-first"); }}>최종 호감 선택 <span>→</span></button>
           </div>
+        </section>
+      )}
+
+      {screen === "final-choice-first" && (
+        <section className="finalChoiceScreen">
+          <p className="eyebrow">FINAL CHOICE · 1 / 2</p>
+          <div className="choiceAvatar" style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</div>
+          <h2><em>{demoCouple[0].name}</em>님의 마음은?</h2>
+          <p>오늘 함께한 파트너와 게임 밖에서도 대화를 이어가고 싶나요?</p>
+          <div className="finalChoiceButtons">
+            <button onClick={() => { setFinalFirstChoice(true); transitionTo("final-choice-second"); }}><span>♥</span><b>대화를 이어가고 싶어요</b><small>상대도 같은 선택을 해야 공개됩니다</small></button>
+            <button onClick={() => { setFinalFirstChoice(false); transitionTo("final-choice-second"); }}><span>☺</span><b>좋은 게임 친구로 남을래요</b><small>선택은 상대에게 직접 공개되지 않아요</small></button>
+          </div>
+          <p className="privacyNote">선택 후 화면을 다음 사람에게 건네주세요.</p>
+        </section>
+      )}
+
+      {screen === "final-choice-second" && (
+        <section className="finalChoiceScreen">
+          <p className="eyebrow">FINAL CHOICE · 2 / 2</p>
+          <div className="choiceAvatar" style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</div>
+          <h2><em>{demoCouple[1].name}</em>님의 마음은?</h2>
+          <p>첫 번째 사람의 선택은 안전하게 숨겨져 있어요. 나의 마음대로 골라주세요.</p>
+          <div className="finalChoiceButtons">
+            <button onClick={() => { setFinalSecondChoice(true); transitionTo("final-reveal"); }}><span>♥</span><b>대화를 이어가고 싶어요</b><small>서로 선택했다면 대화방이 열립니다</small></button>
+            <button onClick={() => { setFinalSecondChoice(false); transitionTo("final-reveal"); }}><span>☺</span><b>좋은 게임 친구로 남을래요</b><small>부담 없이 게임을 마무리합니다</small></button>
+          </div>
+        </section>
+      )}
+
+      {screen === "final-reveal" && finalFirstChoice !== null && finalSecondChoice !== null && (
+        <section className="finalRevealScreen">
+          <p className="eyebrow">FINAL CHOICE · REVEAL</p>
+          {finalFirstChoice && finalSecondChoice ? (
+            <>
+              <div className="matchedHeart" aria-hidden="true">♥</div>
+              <h2>두 사람의 마음이<br /><em>서로 통했어요</em></h2>
+              <div className="matchedCouple">
+                <span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><b>{demoCouple[0].name}</b><i>♥</i><b>{demoCouple[1].name}</b><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span>
+              </div>
+              <p>둘만 볼 수 있는 조용한 대화 공간을 준비했어요.</p>
+              <button className="primaryButton centerButton" onClick={() => transitionTo("private-chat")}>1:1 대화 시작하기 <span>→</span></button>
+            </>
+          ) : (
+            <>
+              <div className="matchedHeart friend" aria-hidden="true">☺</div>
+              <h2>오늘의 좋은 인연으로<br /><em>게임을 마쳤어요</em></h2>
+              <p>누가 어떤 선택을 했는지는 공개하지 않아요. 함께한 즐거운 순간만 간직해 주세요.</p>
+              <button className="primaryButton centerButton" onClick={() => transitionTo("landing")}>처음으로 <span>→</span></button>
+            </>
+          )}
+        </section>
+      )}
+
+      {screen === "private-chat" && (
+        <section className="chatScreen">
+          <header className="chatHeader">
+            <div className="chatCouple"><span style={{ background: demoCouple[0].color }}>{demoCouple[0].avatar}</span><i>♥</i><span style={{ background: demoCouple[1].color }}>{demoCouple[1].avatar}</span></div>
+            <div><h2>{demoCouple[0].name} · {demoCouple[1].name}</h2><p>둘만의 1:1 대화 · 데모</p></div>
+            <button className="secondaryButton compactButton" onClick={() => transitionTo("landing")}>대화 종료</button>
+          </header>
+          <div className="chatMessages" aria-live="polite" aria-label="대화 내용">
+            {chatMessages.map((message, index) => (
+              message.from === "system"
+                ? <p className="systemMessage" key={index}>{message.text}</p>
+                : <div className={`chatBubble ${message.from === "me" ? "mine" : "partner"}`} key={index}>{message.text}</div>
+            ))}
+          </div>
+          <form className="chatComposer" onSubmit={sendChatMessage}>
+            <label className="srOnly" htmlFor="chat-message">메시지 입력</label>
+            <input id="chat-message" value={chatInput} onChange={(event) => setChatInput(event.target.value)}
+              maxLength={200} autoComplete="off" placeholder="편안하게 첫 인사를 건네보세요" />
+            <button className="primaryButton" disabled={!chatInput.trim()} type="submit">보내기</button>
+          </form>
+          <p className="chatSafety">데모 메시지는 서버로 전송되지 않으며 새로고침하면 사라집니다. 연락처나 민감한 개인정보 공유는 신중히 결정해 주세요.</p>
         </section>
       )}
       </main>
