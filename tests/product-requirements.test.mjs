@@ -43,6 +43,7 @@ test("대기방의 소통, 프로필 열람과 안전 기능을 유지한다", a
   assert.match(page, /unlockedPhotoKeys/);
   assert.match(page, /\[0, 1, 2, 3, 4\]\.map/);
   assert.match(page, /`\$\{profileId\}:\$\{index\}`/);
+  assert.match(page, /프로필 사진 확인하기/);
   assert.match(css, /\.profileReactionBubble\s*\{[^}]*right:\s*-12px/);
   assert.match(css, /border-radius:\s*50% 50% 50% 8px/);
   assert.doesNotMatch(css, /\.profileReactionBubble::after/);
@@ -51,8 +52,17 @@ test("대기방의 소통, 프로필 열람과 안전 기능을 유지한다", a
 test("전체 게임 라운드와 결과 흐름을 유지한다", async () => {
   const [page] = await readProduct();
 
+  assert.match(page, /const gameScreens: Screen\[\]/);
+  assert.match(page, /게임 종료하기/);
+  assert.match(page, /정말 게임에서 나갈까요/);
+  assert.match(page, /중도 퇴장 페널티 200 마일리지/);
+  assert.match(page, /setMileageBalance\(\(balance\) => balance - 200\)/);
+  assert.match(page, /isGameInProgress \? requestGameExit\(\) : transitionTo\("lobby"\)/);
   assert.match(page, /첫인상 시그널/);
   assert.match(page, /그림으로 취향 맞히기/);
+  assert.match(page, /const drawingColors =/);
+  assert.match(page, /그림 펜 색상 선택/);
+  assert.match(page, /context\.strokeStyle = drawingColor/);
   assert.match(page, /const drawerPlayer = demoCouple\[quizIndex % 2\]/);
   assert.match(page, /canvas\.toDataURL\("image\/png"\)/);
   assert.match(page, /src=\{drawingImage\}/);

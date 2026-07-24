@@ -45,6 +45,24 @@ type RoomConfig = {
 };
 type ChatMessage = { from: string; text: string; image?: string };
 
+const gameScreens: Screen[] = [
+  "landing", "signal", "match-result", "quiz-intro", "draw", "guess", "quiz-result",
+  "compat-intro", "compat-first", "compat-second", "compat-reveal", "compat-result",
+  "burger-intro", "burger-play", "burger-result", "final-result",
+  "final-choice-first", "final-choice-second", "final-reveal",
+];
+
+const drawingColors = [
+  { name: "검정", value: "#231f2d" },
+  { name: "빨강", value: "#e53935" },
+  { name: "주황", value: "#f57c00" },
+  { name: "노랑", value: "#fbc02d" },
+  { name: "초록", value: "#2e9d61" },
+  { name: "파랑", value: "#2878d0" },
+  { name: "보라", value: "#7956d8" },
+  { name: "분홍", value: "#e8528b" },
+];
+
 const players: Player[] = [
   { id: "a1", name: "민준", age: 29, job: "서비스 기획자", intro: "좋은 카페와 느긋한 산책을 좋아해요.", interests: ["커피", "여행"], avatar: "민", color: "#7456f1", team: "A" },
   { id: "a2", name: "도윤", age: 31, job: "건축 디자이너", intro: "주말엔 요리하고 사진을 찍습니다.", interests: ["요리", "사진"], avatar: "도", color: "#3178e0", team: "A" },
@@ -346,6 +364,8 @@ export default function Home() {
   const [volume, setVolume] = useState(60);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [drawingColor, setDrawingColor] = useState(drawingColors[0].value);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const transitionTimerRef = useRef<number | null>(null);
@@ -380,6 +400,7 @@ export default function Home() {
   const chatTimeLabel = `${String(Math.floor(chatSeconds / 60)).padStart(2, "0")}:${String(chatSeconds % 60).padStart(2, "0")}`;
   const activeChatFriend = players.find((player) => player.id === activeChatFriendId) ?? demoCouple[1];
   const pendingChatFriend = players.find((player) => player.id === pendingChatFriendId);
+  const isGameInProgress = gameScreens.includes(screen);
   const musicRound: keyof typeof musicThemes = screen === "final-result"
     ? "roundFive"
     : screen.startsWith("final-") || screen === "private-chat" || screen === "friends"
@@ -801,6 +822,7 @@ export default function Home() {
     event.currentTarget.setPointerCapture(event.pointerId);
     const context = event.currentTarget.getContext("2d");
     const point = position(event);
+    if (context) context.strokeStyle = drawingColor;
     context?.beginPath();
     context?.moveTo(point.x, point.y);
     setIsDrawing(true);
@@ -998,15 +1020,26 @@ export default function Home() {
     setMileageNotice("상대가 대화를 거절해 신청 비용의 80%인 240 마일리지가 반환됐어요.");
   };
 
+  const requestGameExit = () => setExitConfirmOpen(true);
+
+  const confirmGameExit = () => {
+    setMileageBalance((balance) => balance - 200);
+    setExitConfirmOpen(false);
+    setIsReady(false);
+    setAuthNotice("게임을 중도 종료해 200 마일리지가 차감됐어요.");
+    transitionTo("lobby");
+  };
+
   return (
     <>
       <a className="skipLink" href="#main-content">게임 본문으로 건너뛰기</a>
       <main id="main-content" aria-busy={isTransitioning}>
       {!["login", "signup", "profile", "verify"].includes(screen) && <header className="topbar">
-        <button className="brand" onClick={() => transitionTo("lobby")} aria-label="로비로">
+        <button className="brand" onClick={() => isGameInProgress ? requestGameExit() : transitionTo("lobby")} aria-label={isGameInProgress ? "게임 종료 확인 후 로비로" : "로비로"}>
           <span className="brandMark">♥</span><span>HEART ROUND</span>
         </button>
         <div className="topbarActions">
+          {isGameInProgress && <button className="gameExitButton" type="button" onClick={requestGameExit}>게임 종료하기</button>}
           <button className="accountPill" type="button" onClick={() => transitionTo("friends")} aria-label={`내 마일리지 ${mileageBalance}`}>
             <span>✦</span><b>{mileageBalance}</b><small>마일리지</small>
           </button>
@@ -1041,6 +1074,21 @@ export default function Home() {
           </div>
           <b>둘만의 다음 장면으로 걸어가는 중…</b>
           <small>잠시만 기다려 주세요</small>
+        </div>
+      )}
+
+      {exitConfirmOpen && (
+        <div className="gameExitBackdrop">
+          <section className="gameExitDialog" role="alertdialog" aria-modal="true" aria-labelledby="game-exit-title" aria-describedby="game-exit-description">
+            <span aria-hidden="true">⚠️</span>
+            <p className="eyebrow">LEAVE GAME</p>
+            <h2 id="game-exit-title">정말 게임에서 나갈까요?</h2>
+            <p id="game-exit-description">진행 중인 게임 기록은 사라지고 <b>중도 퇴장 페널티 200 마일리지</b>가 차감됩니다.</p>
+            <div>
+              <button className="secondaryButton" type="button" onClick={() => setExitConfirmOpen(false)}>계속 게임하기</button>
+              <button className="dangerButton" type="button" onClick={confirmGameExit}>200 차감하고 나가기</button>
+            </div>
+          </section>
         </div>
       )}
 
@@ -1364,7 +1412,7 @@ export default function Home() {
                         ) : person.isMe ? <span>{person.avatar}</span> : (
                           <button className="portraitOpenButton" type="button" onClick={() => openProfilePhotos(person.id)}
                             aria-label={`${person.name}님의 프로필 사진 더 보기`}>
-                            <span>{person.avatar}</span><small>사진 보기</small>
+                            <span>{person.avatar}</span><small>프로필 사진 확인하기</small>
                           </button>
                         )}
                         <i>{person.isMe ? "나" : group.mark}</i>
@@ -1610,7 +1658,14 @@ export default function Home() {
             <div className="questionNumber">{quizIndex + 1} / {quizQuestions.length}</div>
           </div>
           <div className="canvasToolbar">
-            <span>검은색 펜으로 힌트를 그려주세요</span>
+            <div className="drawingPalette" role="group" aria-label="그림 펜 색상 선택">
+              <span>펜 색상</span>
+              {drawingColors.map((color) => (
+                <button type="button" key={color.value} onClick={() => setDrawingColor(color.value)}
+                  className={drawingColor === color.value ? "selected" : ""} aria-label={`${color.name} 펜`}
+                  aria-pressed={drawingColor === color.value} style={{ "--drawing-color": color.value } as React.CSSProperties} />
+              ))}
+            </div>
             <button className="secondaryButton compactButton" onClick={clearCanvas}>모두 지우기</button>
           </div>
           <canvas ref={canvasRef} className="drawCanvas" onPointerDown={startLine} onPointerMove={drawLine}
