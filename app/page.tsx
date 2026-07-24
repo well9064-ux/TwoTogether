@@ -41,6 +41,7 @@ type RoomConfig = {
   maxAge: number;
   region: string;
   isMine?: boolean;
+  isDemo?: boolean;
 };
 type ChatMessage = { from: string; text: string; image?: string };
 
@@ -147,6 +148,7 @@ const initialVotes: Record<string, string> = {
   a1: "b2", a2: "b1", a3: "b3", b1: "a2", b2: "a3", b3: "a3",
 };
 const defaultRooms: RoomConfig[] = [
+  { id: "demo-full-room", title: "🎮 혼자서 전체 게임 테스트", people: 6, capacity: 6, tag: "TEST · 바로 시작", time: "약 15분", minAge: 19, maxAge: 60, region: "모든 지역", isDemo: true },
   { id: "room-01", title: "퇴근 후 설레는 한 판", people: 4, capacity: 6, tag: "☕ 편한 대화", time: "약 25분", minAge: 25, maxAge: 35, region: "모든 지역" },
   { id: "room-02", title: "취향부터 천천히", people: 2, capacity: 6, tag: "💗 진지한 만남", time: "약 30분", minAge: 27, maxAge: 39, region: "서울" },
   { id: "room-03", title: "주말의 인연", people: 3, capacity: 4, tag: "🎲 게임 집중", time: "약 20분", minAge: 24, maxAge: 32, region: "경기" },
@@ -490,7 +492,7 @@ export default function Home() {
   };
 
   const joinLobbyRoom = (room: RoomConfig) => {
-    if (!isVerified) {
+    if (!isVerified && !room.isDemo) {
       setAuthNotice("실제 참가자가 있는 게임방에 들어가려면 먼저 본인·연령 확인이 필요해요.");
       transitionTo("verify");
       return;
@@ -1240,7 +1242,7 @@ export default function Home() {
           </form>
           <div className="roomGrid">
             {visibleLobbyRooms.map((room, index) => (
-              <article className="roomCard" key={room.title}>
+              <article className={`roomCard ${room.isDemo ? "demoRoom" : ""}`} key={room.title}>
                 <div className="roomTop"><span>ROOM {String((lobbyPage - 1) * 9 + index + 1).padStart(2, "0")}</span><i>{room.tag}</i></div>
                 <h3>{room.title}</h3>
                 <p>{room.minAge}–{room.maxAge}세 · {room.region} · 남녀 {room.capacity / 2}:{room.capacity / 2}</p>
@@ -1249,7 +1251,7 @@ export default function Home() {
                 </div>
                 <div className="roomMeta"><b>{room.people} / {room.capacity}명</b><span>{room.time}</span></div>
                 <button className="primaryButton" type="button" onClick={() => joinLobbyRoom(room)}>
-                  {isVerified ? "참가하기" : "인증 후 참가하기"}
+                  {room.isDemo ? "테스트방 바로 입장" : isVerified ? "참가하기" : "인증 후 참가하기"}
                 </button>
               </article>
             ))}
@@ -1343,7 +1345,7 @@ export default function Home() {
           </div>
           <div className="waitingStatus" role="status">
             <div><span className="pulseDot" />현재 <b>{activeRoom.people}명</b>이 기다리고 있어요</div>
-            <p>{activeRoom.capacity === 4 ? "2:2" : "3:3"} 매칭까지 {activeRoom.capacity - activeRoom.people}자리 남았습니다</p>
+            <p>{activeRoom.isDemo ? "테스트 참가자 6명 준비 완료 · 내가 준비하면 바로 시작" : `${activeRoom.capacity === 4 ? "2:2" : "3:3"} 매칭까지 ${activeRoom.capacity - activeRoom.people}자리 남았습니다`}</p>
           </div>
           <div className="genderWaitingLayout" aria-label="성별로 구분된 대기 중인 참가자 프로필">
             {[
@@ -1437,11 +1439,18 @@ export default function Home() {
           )}
           <div className="waitingFooter">
             <div><b>게임 구성</b><p>사랑의 작대기 + 랜덤 미니게임 3개 + 최종 선택 · 약 25분</p></div>
-            <button className={`primaryButton readyButton ${isReady ? "ready" : ""}`} type="button" aria-pressed={isReady} onClick={() => setIsReady((ready) => !ready)}>
-              {isReady ? "준비 완료 ✓" : "게임 준비하기"}
+            <button className={`primaryButton readyButton ${isReady ? "ready" : ""}`} type="button" aria-pressed={isReady} onClick={() => {
+              if (activeRoom.isDemo) {
+                setIsReady(true);
+                window.setTimeout(resetAll, 500);
+              } else {
+                setIsReady((ready) => !ready);
+              }
+            }}>
+              {activeRoom.isDemo ? (isReady ? "게임 시작 중…" : "준비하고 게임 시작") : isReady ? "준비 완료 ✓" : "게임 준비하기"}
             </button>
           </div>
-          {isReady && <p className="readyNotice" role="status">준비가 완료됐어요. 모든 참가자가 모이면 자동으로 게임을 시작합니다.</p>}
+          {isReady && <p className="readyNotice" role="status">{activeRoom.isDemo ? "모두 준비됐어요. 첫 번째 게임을 시작합니다." : "준비가 완료됐어요. 모든 참가자가 모이면 자동으로 게임을 시작합니다."}</p>}
           {photoViewerPerson && (
             <div className="photoViewerBackdrop">
               <section className="profilePhotoViewer" role="dialog" aria-modal="true" aria-labelledby="photo-viewer-title">

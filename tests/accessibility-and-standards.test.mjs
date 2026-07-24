@@ -116,7 +116,7 @@ test("접근성에 필요한 문서 구조와 대체 입력을 제공한다", as
   assert.match(page, /id="signup-nickname"/);
   assert.match(page, /휴대전화 본인인증 데모/);
   assert.match(page, /인증 없이 로비 둘러보기/);
-  assert.match(page, /if \(!isVerified\)/);
+  assert.match(page, /if \(!isVerified && !room\.isDemo\)/);
   assert.match(page, /aria-label="현재 로비 현황"/);
   assert.match(page, /\$\{room\.capacity\}명 중 \$\{room\.people\}명 참가/);
   assert.match(page, /주민등록번호 · 인증 문자 · 연락처 공개값/);

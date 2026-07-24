@@ -19,6 +19,10 @@ test("회원가입, 프로필, 로비와 방 생성 요구사항을 유지한다
   assert.match(page, /게임방 목록 페이지/);
   assert.match(page, /role="radiogroup" aria-label="방 테마"/);
   assert.match(page, /남녀 비율은 언제나 1:1/);
+  assert.match(page, /id: "demo-full-room".*people: 6.*capacity: 6.*isDemo: true/);
+  assert.match(page, /테스트방 바로 입장/);
+  assert.match(page, /준비하고 게임 시작/);
+  assert.match(page, /window\.setTimeout\(resetAll, 500\)/);
   assert.match(page, /방을 만들려면 200 마일리지가 필요해요/);
   assert.match(page, /setMileageBalance\(\(balance\) => balance - 200\)/);
   assert.match(page, /200 마일리지로 방 만들기/);
